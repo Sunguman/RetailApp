@@ -54,4 +54,29 @@ class FirebaseHelper {
             throw e
         }
     }
+
+    suspend fun pushRoutePlan(entry: RoutePlanEntry) {
+        try {
+            db.child("route_plans").child(entry.id).setValue(entry).await()
+        } catch (e: Exception) {
+            Log.e("FirebaseHelper", "Error pushing route plan: ${e.message}")
+        }
+    }
+
+    suspend fun fetchRoutePlan(repId: String): List<RoutePlanEntry> {
+        // Mock: In a real app, query by repId
+        return emptyList()
+    }
+
+    suspend fun pushInventory(item: InventoryItem) {
+        try {
+            db.child("inventory").child(item.id).setValue(item).await()
+        } catch (e: Exception) {
+            Log.e("FirebaseHelper", "Error pushing inventory: ${e.message}")
+        }
+    }
+
+    suspend fun fetchInventory(): List<InventoryItem> {
+        return emptyList()
+    }
 }

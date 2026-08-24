@@ -1,14 +1,14 @@
 package com.example.retail360.data
 
-import com.example.salesautomation.data.local.PlannedStop
-import com.example.salesautomation.data.local.RoutePlanDao
-import com.example.salesautomation.data.model.RoutePlanEntry
-import com.example.salesautomation.data.remote.FirebaseService
+import com.example.retail360.data.PlannedStop
+import com.example.retail360.data.RoutePlanDao
+import com.example.retail360.model.RoutePlanEntry
+import com.example.retail360.data.FirebaseHelper
 import kotlinx.coroutines.flow.Flow
 
 class RoutePlanRepository(
     private val dao: RoutePlanDao,
-    private val firebase: FirebaseService
+    private val firebase: FirebaseHelper
 ) {
     fun observeStops(repId: String, dayOfWeek: Int, startOfDay: Long): Flow<List<PlannedStop>> =
         dao.observeStops(repId, dayOfWeek, startOfDay)

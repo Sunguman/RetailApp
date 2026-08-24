@@ -7,20 +7,20 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import com.example.salesautomation.data.local.AppDatabase
-import com.example.salesautomation.data.remote.CloudinaryService
-import com.example.salesautomation.data.remote.FirebaseService
-import com.example.salesautomation.data.repository.AuthRepository
-import com.example.salesautomation.data.repository.CustomerRepository
-import com.example.salesautomation.data.repository.InventoryRepository
-import com.example.salesautomation.data.repository.ProductRepository
-import com.example.salesautomation.data.repository.RoutePlanRepository
-import com.example.salesautomation.data.repository.VisitRepository
-import com.example.salesautomation.data.sync.SyncWorker
+import com.example.retail360.data.AppDatabase
+import com.example.retail360.model.CloudinaryService
+import com.example.retail360.data.FirebaseHelper
+import com.example.retail360.data.AuthRepository
+import com.example.retail360.data.CustomerRepository
+import com.example.retail360.data.InventoryRepository
+import com.example.retail360.data.ProductRepository
+import com.example.retail360.data.RoutePlanRepository
+import com.example.retail360.data.VisitRepository
+import com.example.retail360.data.SyncWorker
 import java.util.concurrent.TimeUnit
 
 /**
- * Tiny manual dependency graph. Initialised once from [SalesAutomationApp].
+ * Tiny manual dependency graph. Initialised once from [Retail360App].
  * ViewModels read from here (Graph.customerRepository, ...) which keeps them
  * no-arg so the default viewModel() factory works. Swap for Hilt if you grow.
  */
@@ -42,14 +42,14 @@ object Graph {
     lateinit var inventoryRepository: InventoryRepository
         private set
 
-    val firebase = FirebaseService()
+    val firebase = FirebaseHelper()
     val cloudinary = CloudinaryService()
 
     fun provide(context: Context) {
         db = Room.databaseBuilder(
             context.applicationContext,
             AppDatabase::class.java,
-            "sales_automation.db"
+            "retail360.db"
         ).fallbackToDestructiveMigration().build()
 
         authRepository = AuthRepository(firebase)
@@ -73,7 +73,7 @@ object Graph {
             .build()
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            "sales_sync",
+            "retail360_sync",
             ExistingPeriodicWorkPolicy.KEEP,
             request
         )

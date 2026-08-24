@@ -41,10 +41,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.salesautomation.data.local.PlannedStop
-import com.example.salesautomation.data.model.Customer
-import com.example.salesautomation.ui.collectAsStateSafe
-import com.example.salesautomation.util.Graph
+import com.example.retail360.data.PlannedStop
+import com.example.retail360.model.Customer
+import com.example.retail360.util.collectAsStateSafe
+import com.example.retail360.util.Graph
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted

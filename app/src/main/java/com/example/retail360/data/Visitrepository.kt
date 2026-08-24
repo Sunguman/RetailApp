@@ -1,22 +1,21 @@
 package com.example.retail360.data
 
 import android.net.Uri
-import com.example.salesautomation.data.local.AvailabilityDao
-import com.example.salesautomation.data.local.SaleDao
-import com.example.salesautomation.data.local.VisitDao
-import com.example.salesautomation.data.local.VisitHistoryRow
-import com.example.salesautomation.data.model.AvailabilityRecord
-import com.example.salesautomation.data.model.SaleItem
-import com.example.salesautomation.data.model.Visit
-import com.example.salesautomation.data.remote.CloudinaryService
-import com.example.salesautomation.data.remote.FirebaseService
+import com.example.retail360.data.AvailabilityDao
+import com.example.retail360.data.SaleDao
+import com.example.retail360.data.VisitDao
+import com.example.retail360.model.AvailabilityRecord
+import com.example.retail360.model.SaleItem
+import com.example.retail360.model.Visit
+import com.example.retail360.model.CloudinaryService
+import com.example.retail360.data.FirebaseHelper
 import kotlinx.coroutines.flow.Flow
 
 class VisitRepository(
     private val visitDao: VisitDao,
     private val availabilityDao: AvailabilityDao,
     private val saleDao: SaleDao,
-    private val firebase: FirebaseService,
+    private val firebase: FirebaseHelper,
     private val cloudinary: CloudinaryService
 ) {
     // ---- Visit lifecycle ----
@@ -40,8 +39,6 @@ class VisitRepository(
 
     fun observeForCustomer(customerId: String): Flow<List<Visit>> =
         visitDao.observeForCustomer(customerId)
-
-    fun observeHistory(): Flow<List<VisitHistoryRow>> = visitDao.observeHistory()
 
     fun countCompletedToday(startOfDay: Long): Flow<Int> =
         visitDao.countCompletedSince(startOfDay)

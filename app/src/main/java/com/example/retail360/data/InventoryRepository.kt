@@ -1,14 +1,14 @@
 package com.example.retail360.data
 
-import com.example.salesautomation.data.local.InventoryDao
-import com.example.salesautomation.data.model.InventoryItem
-import com.example.salesautomation.data.model.Product
-import com.example.salesautomation.data.remote.FirebaseService
+import com.example.retail360.data.InventoryDao
+import com.example.retail360.model.InventoryItem
+import com.example.retail360.model.Product
+import com.example.retail360.data.FirebaseHelper
 import kotlinx.coroutines.flow.Flow
 
 class InventoryRepository(
     private val dao: InventoryDao,
-    private val firebase: FirebaseService
+    private val firebase: FirebaseHelper
 ) {
     fun observeAll(): Flow<List<InventoryItem>> = dao.observeAll()
 

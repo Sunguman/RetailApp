@@ -34,10 +34,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.salesautomation.data.model.Customer
-import com.example.salesautomation.util.Graph
-import com.example.salesautomation.util.LatLng
-import com.example.salesautomation.util.LocationProvider
+import com.example.retail360.model.Customer
+import com.example.retail360.util.Graph
+import com.example.retail360.util.LatLng
+import com.example.retail360.util.LocationProvider
 import kotlinx.coroutines.launch
 
 class CustomerCreationViewModel : ViewModel() {

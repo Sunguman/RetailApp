@@ -53,9 +53,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.example.salesautomation.ui.collectAsStateSafe
-import com.example.salesautomation.util.Graph
-import com.example.salesautomation.util.LocationProvider
+import com.example.retail360.util.collectAsStateSafe
+import com.example.retail360.util.Graph
+import com.example.retail360.util.LocationProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch

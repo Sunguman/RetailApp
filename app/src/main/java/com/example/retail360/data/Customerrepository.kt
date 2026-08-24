@@ -1,19 +1,31 @@
 package com.example.retail360.data
 
 import com.example.retail360.model.Customer
+import com.example.retail360.model.CloudinaryService
 import kotlinx.coroutines.flow.Flow
 
-class CustomerRepository(private val dao: CustomerDao) {
-    val customers: Flow<List<Customer>> = dao.all()
+class CustomerRepository(
+    private val dao: CustomerDao,
+    private val firebase: FirebaseHelper,
+    private val cloudinary: CloudinaryService
+) {
+    fun observeAll(): Flow<List<Customer>> = dao.observeAll()
 
-    suspend fun getById(id: String): Customer? = dao.getById(id)
+    val customers: Flow<List<Customer>> = dao.observeAll()
+
+    suspend fun byId(id: String): Customer? = dao.byId(id)
 
     suspend fun save(customer: Customer, photoUri: android.net.Uri? = null) {
-        // Mock photo upload logic
         val finalCustomer = if (photoUri != null) {
-            customer.copy(photoUrl = photoUri.toString())
-        } else customer
+            val uploadedUrl = cloudinary.upload(photoUri, "customers")
+            customer.copy(photoUrl = uploadedUrl ?: photoUri.toString(), synced = false)
+        } else customer.copy(synced = false)
+        
         dao.upsert(finalCustomer)
+        runCatching { 
+            firebase.pushCustomer(finalCustomer)
+            dao.update(finalCustomer.copy(synced = true))
+        }
     }
 
     suspend fun refreshFromServer() {

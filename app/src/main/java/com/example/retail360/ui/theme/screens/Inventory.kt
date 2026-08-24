@@ -42,10 +42,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.salesautomation.data.model.InventoryItem
-import com.example.salesautomation.data.model.Product
-import com.example.salesautomation.ui.collectAsStateSafe
-import com.example.salesautomation.util.Graph
+import com.example.retail360.model.InventoryItem
+import com.example.retail360.model.Product
+import com.example.retail360.util.collectAsStateSafe
+import com.example.retail360.util.Graph
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn

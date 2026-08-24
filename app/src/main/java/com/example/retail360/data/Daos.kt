@@ -5,13 +5,13 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import com.example.salesautomation.data.model.AvailabilityRecord
-import com.example.salesautomation.data.model.InventoryItem
-import com.example.salesautomation.data.model.RoutePlanEntry
-import com.example.salesautomation.data.model.Customer
-import com.example.salesautomation.data.model.Product
-import com.example.salesautomation.data.model.SaleItem
-import com.example.salesautomation.data.model.Visit
+import com.example.retail360.model.AvailabilityRecord
+import com.example.retail360.model.InventoryItem
+import com.example.retail360.model.RoutePlanEntry
+import com.example.retail360.model.Customer
+import com.example.retail360.model.Product
+import com.example.retail360.model.SaleItem
+import com.example.retail360.model.Visit
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -154,32 +154,4 @@ interface InventoryDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(item: InventoryItem)
-}
-
-
-@Dao
-interface AvailabilityDao {
-    @Query("SELECT * FROM availability WHERE visitId = :visitId")
-    fun getByVisit(visitId: String): Flow<List<AvailabilityRecord>>
-
-    @Query("SELECT * FROM availability WHERE synced = 0")
-    suspend fun unsynced(): List<AvailabilityRecord>
-
-    @Upsert
-    suspend fun upsert(record: AvailabilityRecord)
-}
-
-@Dao
-interface SaleDao {
-    @Query("SELECT * FROM sale_items WHERE visitId = :visitId")
-    fun getByVisit(visitId: String): Flow<List<SaleItem>>
-
-    @Query("SELECT * FROM sale_items WHERE synced = 0")
-    suspend fun unsynced(): List<SaleItem>
-
-    @Upsert
-    suspend fun upsert(item: SaleItem)
-
-    @Query("DELETE FROM sale_items WHERE id = :id")
-    suspend fun deleteById(id: String)
 }

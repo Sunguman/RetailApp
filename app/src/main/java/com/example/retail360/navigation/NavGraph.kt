@@ -4,40 +4,43 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.salesautomation.ui.auth.AuthScreen
-import com.example.salesautomation.ui.customer.CustomerCreationScreen
-import com.example.salesautomation.ui.customer.CustomerDetailsScreen
-import com.example.salesautomation.ui.customer.CustomerListScreen
-import com.example.salesautomation.ui.dashboard.DashboardScreen
-import com.example.salesautomation.ui.inventory.InventoryScreen
-import com.example.salesautomation.ui.visit.CheckInCheckoutScreen
-import com.example.salesautomation.ui.route.RoutePlanScreen
-import com.example.salesautomation.ui.settings.SettingsScreen
-import com.example.salesautomation.ui.splash.SplashScreen
-import com.example.salesautomation.ui.sync.SyncStatusScreen
-import com.example.salesautomation.ui.visit.ActiveVisitScreen
-import com.example.salesautomation.ui.visit.AvailabilityScreen
-import com.example.salesautomation.ui.visit.CheckInScreen
-import com.example.salesautomation.ui.visit.CheckOutScreen
-import com.example.salesautomation.ui.visit.ProductScanScreen
-import com.example.salesautomation.ui.visit.SalesScreen
-import com.example.salesautomation.ui.visit.VisitSummaryScreen
+import com.example.retail360.ui.theme.screens.AuthScreen
+import com.example.retail360.ui.theme.screens.CustomerCreationScreen
+import com.example.retail360.ui.theme.screens.CustomerDetailsScreen
+import com.example.retail360.ui.theme.screens.CustomerListScreen
+import com.example.retail360.ui.theme.screens.DashboardScreen
+import com.example.retail360.ui.theme.screens.InventoryScreen
+import com.example.retail360.ui.theme.screens.RoutePlanScreen
+import com.example.retail360.ui.theme.screens.SettingsScreen
+import com.example.retail360.ui.theme.screens.SplashScreen
+import com.example.retail360.ui.theme.screens.SyncStatusScreen
+import com.example.retail360.ui.theme.screens.ActiveVisitScreen
+import com.example.retail360.ui.theme.screens.AvailabilityScreen
+import com.example.retail360.ui.theme.screens.CheckInScreen
+import com.example.retail360.ui.theme.screens.CheckOutScreen
+import com.example.retail360.ui.theme.screens.ProductScanScreen
+import com.example.retail360.ui.theme.screens.SalesScreen
+import com.example.retail360.ui.theme.screens.VisitSummaryScreen
 
 @Composable
 fun NavGraph(navController: NavHostController, startDestination: String) {
 
-    MainScaffold(navController = navController) {
+    MainScaffold(
+        navController = navController,
+        onLogout = {
+            com.example.retail360.util.Graph.authRepository.signOut()
+            navController.navigate(Screen.Auth.route) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    ) {
         NavHost(navController = navController, startDestination = startDestination) {
 
             composable(Screen.Splash.route) {
                 SplashScreen(
-                    onLoggedIn = {
-                        navController.navigate(Screen.Dashboard.route) {
-                            popUpTo(Screen.Splash.route) { inclusive = true }
-                        }
-                    },
-                    onLoggedOut = {
-                        navController.navigate(Screen.Auth.route) {
+                    onNext = {
+                        val start = if (com.example.retail360.util.Graph.authRepository.isLoggedIn()) Screen.Dashboard.route else Screen.Auth.route
+                        navController.navigate(start) {
                             popUpTo(Screen.Splash.route) { inclusive = true }
                         }
                     }
@@ -57,7 +60,6 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
                     onOpenCustomers = { navController.navigate(Screen.CustomerList.route) },
                     onOpenSync = { navController.navigate(Screen.SyncStatus.route) },
                     onOpenRoutePlan = { navController.navigate(Screen.RoutePlan.route) },
-                    onOpenCheckIn = { navController.navigate(Screen.CheckInCheckout.route) },
                     onOpenInventory = { navController.navigate(Screen.Inventory.route) },
                     onLoggedOut = {
                         navController.navigate(Screen.Auth.route) {
@@ -175,13 +177,6 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
 
             composable(Screen.Inventory.route) {
                 InventoryScreen(onBack = { navController.popBackStack() })
-            }
-
-            composable(Screen.CheckInCheckout.route) {
-                CheckInCheckoutScreen(
-                    onBack = { navController.popBackStack() },
-                    onCheckIn = { customerId -> navController.navigate(Screen.CheckIn.path(customerId)) }
-                )
             }
         }
     }

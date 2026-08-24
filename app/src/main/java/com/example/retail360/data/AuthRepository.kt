@@ -5,7 +5,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.userProfileChangeRequest
 import kotlinx.coroutines.tasks.await
 
-class AuthRepository {
+class AuthRepository(private val firebase: FirebaseHelper) {
     private val auth = FirebaseAuth.getInstance()
 
     fun isLoggedIn(): Boolean = auth.currentUser != null

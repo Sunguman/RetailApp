@@ -3,7 +3,8 @@ package com.example.retail360.data
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.example.salesautomation.util.Graph
+import com.example.retail360.util.Graph
+import com.example.retail360.model.*
 
 /**
  * Drains everything still marked synced=false and pushes it to Firebase, then

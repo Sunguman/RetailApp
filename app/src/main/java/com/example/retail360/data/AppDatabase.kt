@@ -2,13 +2,13 @@ package com.example.retail360.data
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import com.example.salesautomation.data.model.AvailabilityRecord
-import com.example.salesautomation.data.model.Customer
-import com.example.salesautomation.data.model.InventoryItem
-import com.example.salesautomation.data.model.Product
-import com.example.salesautomation.data.model.RoutePlanEntry
-import com.example.salesautomation.data.model.SaleItem
-import com.example.salesautomation.data.model.Visit
+import com.example.retail360.model.AvailabilityRecord
+import com.example.retail360.model.Customer
+import com.example.retail360.model.InventoryItem
+import com.example.retail360.model.Product
+import com.example.retail360.model.RoutePlanEntry
+import com.example.retail360.model.SaleItem
+import com.example.retail360.model.Visit
 
 @Database(
     entities = [

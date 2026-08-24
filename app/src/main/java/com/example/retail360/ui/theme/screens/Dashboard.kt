@@ -85,13 +85,13 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import com.example.salesautomation.data.sync.SyncWorker
-import com.example.salesautomation.navigation.LocalDrawerOpener
-import com.example.salesautomation.ui.operations.OperationsHub
-import com.example.salesautomation.ui.collectAsStateSafe
-import com.example.salesautomation.util.Graph
-import com.example.salesautomation.util.LocationProvider
-import com.example.salesautomation.util.NotificationCenter
+import com.example.retail360.data.SyncWorker
+import com.example.retail360.navigation.LocalDrawerOpener
+import com.example.retail360.ui.theme.screens.OperationsHub
+import com.example.retail360.util.collectAsStateSafe
+import com.example.retail360.util.Graph
+import com.example.retail360.util.LocationProvider
+import com.example.retail360.util.NotificationCenter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -223,7 +223,7 @@ fun DashboardScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("SalesAutomation") },
+                title = { Text("Retail360") },
                 navigationIcon = {
                     IconButton(onClick = LocalDrawerOpener.current) {
                         Icon(Icons.Filled.Menu, contentDescription = "Menu")

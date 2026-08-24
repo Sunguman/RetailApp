@@ -46,8 +46,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.salesautomation.ui.collectAsStateSafe
-import com.example.salesautomation.util.Graph
+import com.example.retail360.util.collectAsStateSafe
+import com.example.retail360.util.Graph
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
