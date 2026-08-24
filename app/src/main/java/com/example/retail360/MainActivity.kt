@@ -12,13 +12,11 @@ import com.example.retail360.navigation.NavGraph
 import com.example.retail360.navigation.Screen
 import com.example.retail360.ui.theme.Retail360Theme
 import com.example.retail360.ui.theme.White
-import com.example.retail360.util.Graph
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        Graph.provide(this)
         setContent {
             Retail360Theme {
                 Surface(

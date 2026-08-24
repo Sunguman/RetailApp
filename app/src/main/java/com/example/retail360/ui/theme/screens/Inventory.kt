@@ -76,7 +76,6 @@ fun InventoryScreen(
     val total by vm.totalValue.collectAsStateSafe()
     val catalog by vm.catalog.collectAsStateSafe()
     var adding by remember { mutableStateOf(false) }
-    var editProduct by remember { mutableStateOf<Product?>(null) }
 
     Scaffold(
         topBar = {
@@ -155,6 +154,9 @@ fun InventoryScreen(
     }
 }
 
+// Product being edited (null = pick from catalog first). Hoisted so the row click can set it.
+private var editProduct: Product? = null
+
 @Composable
 private fun SetStockDialog(
     catalog: List<Product>,
@@ -162,8 +164,8 @@ private fun SetStockDialog(
     onConfirm: (Product, Int) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var selected by remember(preselected) { mutableStateOf(preselected) }
-    var qty by remember(preselected) { mutableStateOf("") }
+    var selected by remember { mutableStateOf(preselected) }
+    var qty by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,

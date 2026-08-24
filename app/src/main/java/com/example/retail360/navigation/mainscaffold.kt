@@ -11,10 +11,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Inventory
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Store
@@ -182,7 +182,7 @@ private fun AppDrawer(
         Spacer(Modifier.weight(1f))
         HorizontalDivider()
         NavigationDrawerItem(
-            icon = { Icon(Icons.Default.Logout, contentDescription = null) },
+            icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null) },
             label = { Text("Log out") },
             selected = false,
             onClick = onLogout,

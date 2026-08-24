@@ -1,23 +1,26 @@
 package com.example.retail360.ui.theme.screens
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.CloudSync
-import androidx.compose.material.icons.filled.CompareArrows
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocalShipping
@@ -41,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -158,7 +162,7 @@ fun OperationsHub(
                 OpModule("Product updates", "Log new or removed SKUs",
                     Icons.Filled.Update, false) { onComingSoon("Product updates") },
                 OpModule("Competitor activity", "Track competitor moves",
-                    Icons.Filled.CompareArrows, false) { onComingSoon("Competitor activity") }
+                    Icons.AutoMirrored.Filled.CompareArrows, false) { onComingSoon("Competitor activity") }
             )
         ),
         OpSection(
@@ -172,17 +176,20 @@ fun OperationsHub(
         )
     )
 
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp)
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         sections.forEach { section ->
-            item(key = "h-${section.title}") { SectionHeader(section.title) }
+            item(span = { GridItemSpan(2) }) {
+                SectionHeader(section.title)
+            }
             items(section.modules, key = { it.label }) { module ->
                 ModuleCard(section.accent, module)
-                Spacer(Modifier.size(10.dp))
             }
-            item(key = "sp-${section.title}") { Spacer(Modifier.size(8.dp)) }
         }
     }
 }
@@ -191,16 +198,16 @@ fun OperationsHub(
 private fun SectionHeader(title: String) {
     Text(
         title.uppercase(),
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+        fontWeight = FontWeight.Bold,
         letterSpacing = 1.sp,
-        modifier = Modifier.padding(bottom = 10.dp, top = 4.dp)
+        modifier = Modifier.padding(top = 8.dp)
     )
 }
 
 @Composable
 private fun ModuleCard(accent: Accent, module: OpModule) {
-    // Disabled modules dim to a neutral tint so the eye skips them.
     val effective = if (module.enabled) accent else Accent.NEUTRAL
     val container = accentContainer(effective)
     val onContainer = accentOnContainer(effective)
@@ -208,48 +215,65 @@ private fun ModuleCard(accent: Accent, module: OpModule) {
     Card(
         onClick = module.onClick,
         enabled = module.enabled,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        modifier = Modifier.fillMaxWidth().height(140.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
-            Modifier.fillMaxWidth().padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                color = container,
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.size(48.dp)
+        Box(Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(module.icon, contentDescription = null, tint = onContainer,
-                        modifier = Modifier.size(24.dp))
+                Surface(
+                    color = container,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            module.icon, 
+                            contentDescription = null, 
+                            tint = onContainer,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
-            }
 
-            Column(Modifier.padding(start = 16.dp).weight(1f)) {
+                Spacer(Modifier.height(12.dp))
+
                 Text(
                     module.label,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 16.sp
                 )
                 Text(
                     module.description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 14.sp
                 )
             }
 
-            Spacer(Modifier.width(8.dp))
-            Trailing(module, accent)
+            if (module.badge != null || !module.enabled) {
+                Box(Modifier.align(Alignment.TopEnd).padding(12.dp)) {
+                    TrailingPill(module, accent)
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun Trailing(module: OpModule, accent: Accent) {
+private fun TrailingPill(module: OpModule, accent: Accent) {
     when {
         !module.enabled -> Pill(
             "Soon",
@@ -260,11 +284,6 @@ private fun Trailing(module: OpModule, accent: Accent) {
             module.badge,
             accentContainer(accent),
             accentOnContainer(accent)
-        )
-        else -> Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

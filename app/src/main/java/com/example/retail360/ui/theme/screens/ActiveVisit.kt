@@ -17,14 +17,13 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.FactCheck
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Checklist
-import androidx.compose.material.icons.filled.CompareArrows
+import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.filled.EventBusy
-import androidx.compose.material.icons.filled.FactCheck
 import androidx.compose.material.icons.filled.Feedback
-import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.PriceCheck
@@ -35,6 +34,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -60,7 +60,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -71,6 +70,7 @@ import com.example.retail360.model.SaleItem
 import com.example.retail360.model.Visit
 import com.example.retail360.util.collectAsStateSafe
 import com.example.retail360.util.Graph
+import com.example.retail360.util.ksh
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -147,7 +147,7 @@ fun ActiveVisitScreen(
 
     val activities = listOf(
         Activity("POSM", Icons.Filled.Campaign, false) { comingSoon("POSM") },
-        Activity("Brand audit", Icons.Filled.FactCheck, false) { comingSoon("Brand audit") },
+        Activity("Brand audit", Icons.AutoMirrored.Filled.FactCheck, false) { comingSoon("Brand audit") },
         Activity("Sell", Icons.Filled.ShoppingCart, true, onSales),
         Activity("Orders", Icons.AutoMirrored.Filled.ReceiptLong, false) { comingSoon("Orders") },
         Activity("Payments", Icons.Filled.Payments, false) { comingSoon("Payments") },
@@ -157,10 +157,17 @@ fun ActiveVisitScreen(
         Activity("On-shelf availability", Icons.Filled.Checklist, true, onAvailability),
         Activity("Stock taking / scan", Icons.Filled.QrCodeScanner, true, onScan),
         Activity("Expiry", Icons.Filled.EventBusy, false) { comingSoon("Expiry") },
-        Activity("Competitor activity", Icons.Filled.CompareArrows, false) { comingSoon("Competitor activity") },
+        Activity("Competitor activity", Icons.AutoMirrored.Filled.CompareArrows, false) { comingSoon("Competitor activity") },
         Activity("Share of shelf", Icons.Filled.ViewWeek, false) { comingSoon("Share of shelf") },
         Activity("Survey", Icons.AutoMirrored.Filled.Assignment, false) { comingSoon("Survey") }
     )
+
+    if (visit == null) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
 
     Scaffold(
         topBar = {
@@ -187,7 +194,6 @@ fun ActiveVisitScreen(
         snackbarHost = { SnackbarHost(snackbar) }
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            // ---- Blue timer header ----
             Surface(color = MaterialTheme.colorScheme.primary) {
                 Column(
                     Modifier.fillMaxWidth().padding(16.dp),
@@ -213,7 +219,6 @@ fun ActiveVisitScreen(
                 }
             }
 
-            // ---- Tabs ----
             TabRow(selectedTabIndex = tab) {
                 Tab(tab == 0, { tab = 0 }, text = { Text("Activities") })
                 Tab(tab == 1, { tab = 1 }, text = { Text("Info") })
@@ -297,7 +302,7 @@ private fun InsightsTab(sales: List<SaleItem>, availability: List<AvailabilityRe
     val total = sales.sumOf { it.lineTotal }
     val units = sales.sumOf { it.quantity }
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        StatBig("Sales so far", ksh(total))
+        StatBig("Sales so far", total.ksh())
         StatBig("Units sold", units.toString())
         StatBig("Lines recorded", sales.size.toString())
         StatBig("Availability checks", availability.size.toString())
@@ -324,5 +329,3 @@ private fun formatElapsed(ms: Long): String {
     val s = totalSec % 60
     return "%02dhrs %02dmin %02dsec".format(h, m, s)
 }
-
-private fun ksh(v: Double): String = "KES %,.2f".format(v)

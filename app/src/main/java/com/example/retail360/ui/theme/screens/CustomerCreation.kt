@@ -1,5 +1,6 @@
 package com.example.retail360.ui.theme.screens
 
+
 import android.Manifest
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -38,24 +39,29 @@ import com.example.retail360.model.Customer
 import com.example.retail360.util.Graph
 import com.example.retail360.util.LatLng
 import com.example.retail360.util.LocationProvider
+import com.example.retail360.util.collectAsStateSafe
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 
 class CustomerCreationViewModel : ViewModel() {
     private val repo = Graph.customerRepository
 
-    fun load(id: String, onLoaded: (Customer?) -> Unit) {
-        viewModelScope.launch { onLoaded(repo.byId(id)) }
+    private val _customer = MutableStateFlow<Customer?>(null)
+    val customer = _customer.asStateFlow()
+
+    fun load(id: String) {
+        viewModelScope.launch {
+            _customer.value = repo.byId(id)
+        }
     }
 
     fun save(customer: Customer, photoUri: Uri?, onDone: () -> Unit) {
         viewModelScope.launch {
             val repId = Graph.authRepository.currentUser()?.uid ?: ""
-            // Preserve createdBy on edit; stamp it on create.
-            val stamped = customer.copy(
-                createdBy = customer.createdBy.ifBlank { repId },
-                updatedAt = System.currentTimeMillis()
-            )
-            repo.save(stamped, photoUri)
+            repo.save(customer.copy(createdBy = repId), photoUri)
             onDone()
         }
     }
@@ -77,19 +83,20 @@ fun CustomerCreationScreen(
     var contact by remember { mutableStateOf("") }
     var location by remember { mutableStateOf<LatLng?>(null) }
     var photoUri by remember { mutableStateOf<Uri?>(null) }
-    var original by remember { mutableStateOf<Customer?>(null) }
 
-    androidx.compose.runtime.LaunchedEffect(customerId) {
-        if (customerId != null && original == null) {
-            vm.load(customerId) { c ->
-                if (c != null) {
-                    original = c
-                    name = c.name; type = c.type; phone = c.phone; contact = c.contactPerson
-                    if (c.latitude != 0.0 || c.longitude != 0.0) {
-                        location = LatLng(c.latitude, c.longitude)
-                    }
-                }
-            }
+    val loadedCustomer by vm.customer.collectAsStateSafe()
+
+    LaunchedEffect(customerId) {
+        customerId?.let { vm.load(it) }
+    }
+
+    LaunchedEffect(loadedCustomer) {
+        loadedCustomer?.let { c ->
+            name = c.name
+            type = c.type
+            phone = c.phone
+            contact = c.contactPerson
+            location = LatLng(c.latitude, c.longitude)
         }
     }
 
@@ -106,7 +113,7 @@ fun CustomerCreationScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (customerId == null) "New customer" else "Edit customer") },
+                title = { Text("New customer") },
                 navigationIcon = {
                     IconButton(onClick = onDone) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -143,18 +150,20 @@ fun CustomerCreationScreen(
             Spacer(Modifier.height(8.dp))
             Button(
                 onClick = {
-                    val base = original ?: Customer()
-                    val customer = base.copy(
+                    val customer = loadedCustomer?.copy(
                         name = name.trim(), type = type.trim(), phone = phone.trim(),
                         contactPerson = contact.trim(),
-                        latitude = location?.lat ?: base.latitude,
-                        longitude = location?.lng ?: base.longitude
+                        latitude = location?.lat ?: 0.0, longitude = location?.lng ?: 0.0
+                    ) ?: Customer(
+                        name = name.trim(), type = type.trim(), phone = phone.trim(),
+                        contactPerson = contact.trim(),
+                        latitude = location?.lat ?: 0.0, longitude = location?.lng ?: 0.0
                     )
                     vm.save(customer, photoUri, onDone)
                 },
                 enabled = name.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
-            ) { Text(if (customerId == null) "Save customer" else "Update customer") }
+            ) { Text("Save customer") }
         }
     }
 }

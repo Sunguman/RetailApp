@@ -1,5 +1,7 @@
 package com.example.retail360.ui.theme.screens
 
+
+
 import android.content.Context
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -8,7 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,7 +32,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.retail360.data.SyncWorker
-import com.example.retail360.navigation.LocalDrawerOpener
 import com.example.retail360.util.collectAsStateSafe
 import com.example.retail360.util.Graph
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -83,8 +84,8 @@ fun SyncStatusScreen(
             TopAppBar(
                 title = { Text("Sync") },
                 navigationIcon = {
-                    IconButton(onClick = LocalDrawerOpener.current) {
-                        Icon(Icons.Default.Menu, contentDescription = "Menu")
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )

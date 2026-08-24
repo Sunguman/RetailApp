@@ -21,6 +21,7 @@ import com.example.retail360.ui.theme.screens.CheckOutScreen
 import com.example.retail360.ui.theme.screens.ProductScanScreen
 import com.example.retail360.ui.theme.screens.SalesScreen
 import com.example.retail360.ui.theme.screens.VisitSummaryScreen
+import com.example.retail360.util.Graph
 
 @Composable
 fun NavGraph(navController: NavHostController, startDestination: String) {
@@ -28,7 +29,7 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
     MainScaffold(
         navController = navController,
         onLogout = {
-            com.example.retail360.util.Graph.authRepository.signOut()
+            Graph.authRepository.signOut()
             navController.navigate(Screen.Auth.route) {
                 popUpTo(0) { inclusive = true }
             }
@@ -39,7 +40,7 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
             composable(Screen.Splash.route) {
                 SplashScreen(
                     onNext = {
-                        val start = if (com.example.retail360.util.Graph.authRepository.isLoggedIn()) Screen.Dashboard.route else Screen.Auth.route
+                        val start = if (Graph.authRepository.isLoggedIn()) Screen.Dashboard.route else Screen.Auth.route
                         navController.navigate(start) {
                             popUpTo(Screen.Splash.route) { inclusive = true }
                         }
@@ -106,7 +107,8 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
                     onBack = { navController.popBackStack() },
                     onCheckedIn = { visitId ->
                         navController.navigate(Screen.ActiveVisit.path(visitId)) {
-                            popUpTo(Screen.CustomerDetails.route)
+                            // Pop the check-in screen so back goes to details/route
+                            popUpTo(Screen.CheckIn.route) { inclusive = true }
                         }
                     }
                 )

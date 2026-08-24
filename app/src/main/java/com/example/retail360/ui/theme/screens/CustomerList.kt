@@ -1,5 +1,7 @@
 package com.example.retail360.ui.theme.screens
 
+
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,9 +10,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -28,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.retail360.navigation.LocalDrawerOpener
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -43,7 +44,7 @@ import kotlinx.coroutines.launch
 class CustomerListViewModel : ViewModel() {
     private val repo = Graph.customerRepository
 
-    val customers: StateFlow<List<Customer>> = repo.customers
+    val customers: StateFlow<List<Customer>> = repo.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
@@ -71,8 +72,8 @@ fun CustomerListScreen(
             TopAppBar(
                 title = { Text("Customers") },
                 navigationIcon = {
-                    IconButton(onClick = LocalDrawerOpener.current) {
-                        Icon(Icons.Default.Menu, contentDescription = "Menu")
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )

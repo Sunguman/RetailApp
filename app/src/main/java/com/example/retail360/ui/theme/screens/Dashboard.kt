@@ -3,10 +3,12 @@ package com.example.retail360.ui.theme.screens
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,37 +17,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Checklist
-import androidx.compose.material.icons.filled.CloudSync
-import androidx.compose.material.icons.filled.CompareArrows
 import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.LocalShipping
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.PinDrop
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Route
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Update
-import androidx.compose.material.icons.filled.ViewWeek
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -67,17 +51,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
@@ -87,23 +68,18 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.retail360.data.SyncWorker
 import com.example.retail360.navigation.LocalDrawerOpener
-import com.example.retail360.ui.theme.screens.OperationsHub
+import com.example.retail360.ui.theme.Components.AppFooter
 import com.example.retail360.util.collectAsStateSafe
 import com.example.retail360.util.Graph
+import com.example.retail360.util.ksh
 import com.example.retail360.util.LocationProvider
 import com.example.retail360.util.NotificationCenter
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 import kotlin.math.roundToInt
 
 class DashboardViewModel : ViewModel() {
@@ -119,16 +95,9 @@ class DashboardViewModel : ViewModel() {
         .map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    // In memory for now — persist (DataStore/Room) so a started day survives an app restart.
-    private val _dayStartedAt = MutableStateFlow<Long?>(null)
-    val dayStartedAt: StateFlow<Long?> = _dayStartedAt.asStateFlow()
-
     val repName: String = (Graph.authRepository.currentUser()?.email ?: "there")
         .substringBefore("@")
         .replaceFirstChar { it.uppercase() }
-
-    fun startDay() { _dayStartedAt.value = System.currentTimeMillis() }
-    fun closeDay() { _dayStartedAt.value = null }
 
     fun refresh(onDone: () -> Unit = {}) {
         viewModelScope.launch {
@@ -138,7 +107,6 @@ class DashboardViewModel : ViewModel() {
         }
     }
 
-    /** Surfaces a notification if any local records are still waiting to upload. */
     fun checkPendingSync() {
         viewModelScope.launch {
             val db = Graph.db
@@ -168,7 +136,7 @@ class DashboardViewModel : ViewModel() {
     fun logout() = Graph.authRepository.signOut()
 }
 
-private enum class DateFilter { TODAY, WEEK }
+private enum class DateFilter { WEEK, MONTH, YEAR }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -188,12 +156,6 @@ fun DashboardScreen(
     val totalCustomers by vm.totalCustomers.collectAsStateSafe()
     val plannedToday by vm.plannedToday.collectAsStateSafe()
     val stockValue by vm.stockValue.collectAsStateSafe()
-    val dayStartedAt by vm.dayStartedAt.collectAsStateSafe()
-
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(dayStartedAt) {
-        while (true) { now = System.currentTimeMillis(); delay(30_000) }
-    }
 
     val version = remember {
         runCatching {
@@ -201,14 +163,22 @@ fun DashboardScreen(
         }.getOrNull() ?: "1.0"
     }
     var accuracyM by remember { mutableStateOf<Float?>(null) }
+    
+    val notifPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { _ -> }
+
     LaunchedEffect(Unit) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
         if (hasLocationPermission(context)) {
             accuracyM = LocationProvider(context).current()?.accuracyM
         }
     }
 
     var tab by remember { mutableIntStateOf(0) }
-    var filter by remember { mutableStateOf(DateFilter.TODAY) }
+    var filter by remember { mutableStateOf(DateFilter.WEEK) }
     var refreshing by remember { mutableStateOf(false) }
     var notifOpen by remember { mutableStateOf(false) }
     val notifications by NotificationCenter.items.collectAsStateSafe()
@@ -233,11 +203,8 @@ fun DashboardScreen(
                     IconButton(onClick = {
                         if (!refreshing) {
                             refreshing = true
-                            // Push any unsynced local work up…
                             WorkManager.getInstance(context)
                                 .enqueue(OneTimeWorkRequestBuilder<SyncWorker>().build())
-                            // …and pull the latest down. Screens observe Room, so the
-                            // whole app updates once these land.
                             vm.refresh {
                                 refreshing = false
                                 vm.checkPendingSync()
@@ -260,7 +227,7 @@ fun DashboardScreen(
                         }
                     }
 
-                    androidx.compose.foundation.layout.Box {
+                    Box {
                         BadgedBox(
                             badge = { if (unread > 0) Badge { Text(unread.toString()) } }
                         ) {
@@ -301,7 +268,7 @@ fun DashboardScreen(
                     }
 
                     IconButton(onClick = { vm.logout(); onLoggedOut() }) {
-                        Icon(Icons.Filled.Logout, contentDescription = "Log out")
+                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Log out")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -313,10 +280,9 @@ fun DashboardScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbar) },
-        bottomBar = { DayBar(dayStartedAt, version, accuracyM, vm::startDay, vm::closeDay) }
+        bottomBar = { AppFooter(version, accuracyM) }
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            // Blue header: greeting + tabs (continuous with the app bar)
             Surface(color = MaterialTheme.colorScheme.primary) {
                 Column {
                     Text(
@@ -339,7 +305,7 @@ fun DashboardScreen(
                 }
             }
 
-            androidx.compose.foundation.layout.Box(Modifier.weight(1f)) {
+            Box(Modifier.weight(1f)) {
                 when (tab) {
                     0 -> DashboardTab(
                         filter = filter,
@@ -363,8 +329,6 @@ fun DashboardScreen(
     }
 }
 
-/* ---------------- Dashboard (KPI) tab ---------------- */
-
 @Composable
 private fun DashboardTab(
     filter: DateFilter,
@@ -382,31 +346,35 @@ private fun DashboardTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Filter pills + calendar
         Row(verticalAlignment = Alignment.CenterVertically) {
-            FilterPill("Today", filter == DateFilter.TODAY) { onFilter(DateFilter.TODAY) }
-            Spacer(Modifier.width(12.dp))
-            FilterPill("This week", filter == DateFilter.WEEK) { onFilter(DateFilter.WEEK) }
+            FilterPill("Week", filter == DateFilter.WEEK) { onFilter(DateFilter.WEEK) }
+            Spacer(Modifier.width(8.dp))
+            FilterPill("Month", filter == DateFilter.MONTH) { onFilter(DateFilter.MONTH) }
+            Spacer(Modifier.width(8.dp))
+            FilterPill("Year", filter == DateFilter.YEAR) { onFilter(DateFilter.YEAR) }
             Spacer(Modifier.weight(1f))
             IconButton(onClick = onPickDate) {
                 Icon(Icons.Filled.CalendarMonth, contentDescription = "Pick date")
             }
         }
 
-        // Visits + sales summary
         Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp)) {
-                Row(Modifier.fillMaxWidth()) {
-                    MiniStat("To visit", planned.toString(), MaterialTheme.colorScheme.primary, Modifier.weight(1f))
-                    MiniStat("Visited", visited.toString(), MaterialTheme.colorScheme.secondary, Modifier.weight(1f))
-                    MiniStat("Pending", (planned - visited).coerceAtLeast(0).toString(), MaterialTheme.colorScheme.error, Modifier.weight(1f))
-                }
-                Spacer(Modifier.height(16.dp))
-                MetricBar("Sales amount", 0, 0) // TODO: sum today's SaleItem line totals
+            Row(Modifier.fillMaxWidth().padding(16.dp)) {
+                MiniStat("To visit", planned.toString(), MaterialTheme.colorScheme.primary, Modifier.weight(1f))
+                MiniStat("Visited", visited.toString(), MaterialTheme.colorScheme.secondary, Modifier.weight(1f))
+                MiniStat("Pending", (planned - visited).coerceAtLeast(0).toString(), MaterialTheme.colorScheme.error, Modifier.weight(1f))
             }
         }
 
-        // Customer performance
+        Card(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp)) {
+                Text("Sales", style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(12.dp))
+                MetricBar("Amount / target", 0, 0)
+            }
+        }
+
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {
                 Text("Customer performance", style = MaterialTheme.typography.titleMedium,
@@ -414,23 +382,21 @@ private fun DashboardTab(
                 Spacer(Modifier.height(12.dp))
                 MetricBar("Interaction", visited, totalCustomers)
                 Spacer(Modifier.height(12.dp))
-                MetricBar("Productivity", 0, totalCustomers) // TODO: orders placed today
+                MetricBar("Productivity", 0, totalCustomers)
             }
         }
 
-        // Pending trips / deliveries
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            CountCard("Pending trips", 0, Modifier.weight(1f))     // TODO: trips model
-            CountCard("Pending deliveries", 0, Modifier.weight(1f)) // TODO: deliveries model
+            CountCard("Pending trips", 0, Modifier.weight(1f))
+            CountCard("Pending deliveries", 0, Modifier.weight(1f))
         }
 
-        // Current stock value
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {
                 Text("Current stock", style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
-                Text(ksh(stockValue), style = MaterialTheme.typography.headlineMedium)
+                Text(stockValue.ksh(), style = MaterialTheme.typography.headlineMedium)
             }
         }
     }
@@ -496,67 +462,6 @@ private fun FilterPill(text: String, selected: Boolean, onClick: () -> Unit) {
     }
 }
 
-/* ---------------- Activities (launcher) tab ---------------- */
-
-/* ---------------- Shared bottom bar ---------------- */
-
-@Composable
-private fun DayBar(
-    dayStartedAt: Long?,
-    version: String,
-    accuracyM: Float?,
-    onStart: () -> Unit,
-    onClose: () -> Unit
-) {
-    Column {
-        Surface(tonalElevation = 3.dp) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (dayStartedAt != null) {
-                    Text("Started ${timeFormat.format(Date(dayStartedAt))}",
-                        Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                    Button(
-                        onClick = onClose,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error
-                        )
-                    ) { Text("Close day") }
-                } else {
-                    Text("Day not started",
-                        Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                    Button(
-                        onClick = onStart,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary
-                        )
-                    ) { Text("Open day") }
-                }
-            }
-        }
-        Surface(color = MaterialTheme.colorScheme.primary) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("v$version", style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimary)
-                Spacer(Modifier.weight(1f))
-                Text(accuracyM?.let { "GPS ±${it.roundToInt()} m" } ?: "GPS —",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimary)
-            }
-        }
-    }
-}
-
-/* ---------------- helpers ---------------- */
-
-private val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
-
-private fun ksh(v: Double): String = "KES %,.2f".format(v)
-
 private fun greeting(): String {
     val h = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
     return when {
@@ -569,5 +474,3 @@ private fun greeting(): String {
 private fun hasLocationPermission(context: Context): Boolean =
     ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
             PackageManager.PERMISSION_GRANTED
-
-

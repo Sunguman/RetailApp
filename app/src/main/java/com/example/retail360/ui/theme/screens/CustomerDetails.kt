@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Store
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,7 +38,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -102,7 +100,6 @@ fun CustomerDetailsScreen(
 
     var tab by remember { mutableIntStateOf(0) }
     var menuOpen by remember { mutableStateOf(false) }
-    var confirmCheckIn by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -146,7 +143,7 @@ fun CustomerDetailsScreen(
         floatingActionButton = {
             if (customer != null) {
                 ExtendedFloatingActionButton(
-                    onClick = { confirmCheckIn = true },
+                    onClick = onCheckIn,
                     icon = { Icon(Icons.Filled.LocationOn, contentDescription = null) },
                     text = { Text("Check in") }
                 )
@@ -179,20 +176,6 @@ fun CustomerDetailsScreen(
                 }
             }
         }
-    }
-
-    if (confirmCheckIn && customer != null) {
-        AlertDialog(
-            onDismissRequest = { confirmCheckIn = false },
-            title = { Text("Check in?") },
-            text = { Text("This will start the visit to ${customer?.name}.") },
-            confirmButton = {
-                TextButton(onClick = { confirmCheckIn = false; onCheckIn() }) { Text("Check in") }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmCheckIn = false }) { Text("Cancel") }
-            }
-        )
     }
 }
 

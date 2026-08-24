@@ -20,11 +20,29 @@ class LocationProvider(private val context: Context) {
     @SuppressLint("MissingPermission") // caller must have requested ACCESS_FINE_LOCATION
     suspend fun current(): LatLng? = suspendCancellableCoroutine { cont ->
         val client = LocationServices.getFusedLocationProviderClient(context)
+        
+        // Try to get fresh location
         client.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
             .addOnSuccessListener { loc ->
-                cont.resume(loc?.let { LatLng(it.latitude, it.longitude, it.accuracy) })
+                if (loc != null) {
+                    cont.resume(LatLng(loc.latitude, loc.longitude, loc.accuracy))
+                } else {
+                    // Fallback to last known location
+                    client.lastLocation.addOnSuccessListener { lastLoc ->
+                        cont.resume(lastLoc?.let { LatLng(it.latitude, it.longitude, it.accuracy) })
+                    }.addOnFailureListener {
+                        cont.resume(null)
+                    }
+                }
             }
-            .addOnFailureListener { cont.resume(null) }
+            .addOnFailureListener {
+                // Fallback to last known location on failure
+                client.lastLocation.addOnSuccessListener { lastLoc ->
+                    cont.resume(lastLoc?.let { LatLng(it.latitude, it.longitude, it.accuracy) })
+                }.addOnFailureListener {
+                    cont.resume(null)
+                }
+            }
     }
 
     companion object {
