@@ -4,24 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.retail360.ui.theme.screens.AuthScreen
-import com.example.retail360.ui.theme.screens.CustomerCreationScreen
-import com.example.retail360.ui.theme.screens.CustomerDetailsScreen
-import com.example.retail360.ui.theme.screens.CustomerListScreen
-import com.example.retail360.ui.theme.screens.DashboardScreen
-import com.example.retail360.ui.theme.screens.InventoryScreen
-import com.example.retail360.ui.theme.screens.RoutePlanScreen
-import com.example.retail360.ui.theme.screens.SettingsScreen
-import com.example.retail360.ui.theme.screens.SplashScreen
-import com.example.retail360.ui.theme.screens.SyncStatusScreen
-import com.example.retail360.ui.theme.screens.ActiveVisitScreen
-import com.example.retail360.ui.theme.screens.AvailabilityScreen
-import com.example.retail360.ui.theme.screens.CheckInScreen
-import com.example.retail360.ui.theme.screens.CheckOutScreen
-import com.example.retail360.ui.theme.screens.ProductScanScreen
-import com.example.retail360.ui.theme.screens.SalesScreen
-import com.example.retail360.ui.theme.screens.VisitSummaryScreen
-import com.example.retail360.util.Graph
+import com.example.retail360.ui.theme.screens.*
 
 @Composable
 fun NavGraph(navController: NavHostController, startDestination: String) {
@@ -29,7 +12,6 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
     MainScaffold(
         navController = navController,
         onLogout = {
-            Graph.authRepository.signOut()
             navController.navigate(Screen.Auth.route) {
                 popUpTo(0) { inclusive = true }
             }
@@ -40,8 +22,7 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
             composable(Screen.Splash.route) {
                 SplashScreen(
                     onNext = {
-                        val start = if (Graph.authRepository.isLoggedIn()) Screen.Dashboard.route else Screen.Auth.route
-                        navController.navigate(start) {
+                        navController.navigate(Screen.Dashboard.route) {
                             popUpTo(Screen.Splash.route) { inclusive = true }
                         }
                     }
@@ -61,7 +42,9 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
                     onOpenCustomers = { navController.navigate(Screen.CustomerList.route) },
                     onOpenSync = { navController.navigate(Screen.SyncStatus.route) },
                     onOpenRoutePlan = { navController.navigate(Screen.RoutePlan.route) },
+                    onOpenCheckIn = { navController.navigate(Screen.CheckInCheckout.route) },
                     onOpenInventory = { navController.navigate(Screen.Inventory.route) },
+                    onOpenProducts = { navController.navigate(Screen.ProductList.route) },
                     onLoggedOut = {
                         navController.navigate(Screen.Auth.route) {
                             popUpTo(0) { inclusive = true }
@@ -74,12 +57,16 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
                 CustomerListScreen(
                     onBack = { navController.popBackStack() },
                     onCreate = { navController.navigate(Screen.CustomerCreate.route) },
-                    onOpen = { id -> navController.navigate(Screen.CustomerDetails.path(id)) }
+                    onOpen = { id: String -> navController.navigate(Screen.CustomerDetails.path(id)) }
                 )
             }
 
             composable(Screen.CustomerCreate.route) {
-                CustomerCreationScreen(onDone = { navController.popBackStack() })
+                CustomerCreationScreen(onDone = {
+                    navController.navigate(Screen.CustomerList.route) {
+                        popUpTo(Screen.CustomerList.route) { inclusive = true }
+                    }
+                })
             }
 
             composable(Screen.CustomerEdit.route) { entry ->
@@ -105,10 +92,9 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
                 CheckInScreen(
                     customerId = id,
                     onBack = { navController.popBackStack() },
-                    onCheckedIn = { visitId ->
+                    onCheckedIn = { visitId: String ->
                         navController.navigate(Screen.ActiveVisit.path(visitId)) {
-                            // Pop the check-in screen so back goes to details/route
-                            popUpTo(Screen.CheckIn.route) { inclusive = true }
+                            popUpTo(Screen.CustomerDetails.route)
                         }
                     }
                 )
@@ -173,12 +159,34 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
             composable(Screen.RoutePlan.route) {
                 RoutePlanScreen(
                     onBack = { navController.popBackStack() },
-                    onCheckIn = { customerId -> navController.navigate(Screen.CheckIn.path(customerId)) }
+                    onCheckIn = { customerId: String -> navController.navigate(Screen.CheckIn.path(customerId)) }
                 )
             }
 
+            composable(Screen.AddProduct.route) {
+                AddProductScreen(onDone = { navController.popBackStack() })
+            }
+
             composable(Screen.Inventory.route) {
-                InventoryScreen(onBack = { navController.popBackStack() })
+                InventoryScreen(
+                    onBack = { navController.popBackStack() },
+                    onAddProduct = { navController.navigate(Screen.AddProduct.route) }
+                )
+            }
+
+            composable(Screen.ProductList.route) {
+                ProductListScreen(
+                    onBack = { navController.popBackStack() },
+                    onAddProduct = { navController.navigate(Screen.AddProduct.route) }
+                )
+            }
+
+            composable(Screen.CheckInCheckout.route) {
+                CustomerListScreen(
+                    onBack = { navController.popBackStack() },
+                    onCreate = { navController.navigate(Screen.CustomerCreate.route) },
+                    onOpen = { customerId: String -> navController.navigate(Screen.CheckIn.path(customerId)) }
+                )
             }
         }
     }

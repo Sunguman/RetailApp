@@ -63,9 +63,8 @@ data class DrawerModule(
 private val drawerModules = listOf(
     DrawerModule(Screen.Dashboard, "Dashboard", Icons.Filled.Dashboard),
     DrawerModule(Screen.CustomerList, "Customers", Icons.Filled.Store),
-    DrawerModule(Screen.Products, "Products", Icons.Filled.Inventory),
+    DrawerModule(Screen.Inventory, "Inventory", Icons.Filled.Inventory),
     DrawerModule(Screen.SyncStatus, "Sync", Icons.Filled.CloudSync),
-    DrawerModule(Screen.Support, "Customer Support", Icons.Filled.SupportAgent),
     DrawerModule(Screen.Settings, "Settings", Icons.Filled.Settings)
 )
 
@@ -134,8 +133,7 @@ private fun AppDrawer(
     ModalDrawerSheet {
         Column(Modifier.padding(16.dp)) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable { onSelect(Screen.Profile) }
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
                     modifier = Modifier.size(48.dp),

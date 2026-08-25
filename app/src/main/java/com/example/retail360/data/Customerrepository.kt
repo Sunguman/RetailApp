@@ -2,7 +2,9 @@ package com.example.retail360.data
 
 import com.example.retail360.model.Customer
 import com.example.retail360.model.CloudinaryService
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 
 class CustomerRepository(
     private val dao: CustomerDao,
@@ -15,7 +17,7 @@ class CustomerRepository(
 
     suspend fun byId(id: String): Customer? = dao.byId(id)
 
-    suspend fun save(customer: Customer, photoUri: android.net.Uri? = null) {
+    suspend fun save(customer: Customer, photoUri: android.net.Uri? = null) = withContext(Dispatchers.IO) {
         val finalCustomer = if (photoUri != null) {
             val uploadedUrl = cloudinary.upload(photoUri, "customers")
             customer.copy(photoUrl = uploadedUrl ?: photoUri.toString(), synced = false)

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Payments
@@ -95,6 +96,9 @@ class OperationsViewModel : ViewModel() {
     val inventoryItems: StateFlow<Int> = Graph.inventoryRepository.observeAll()
         .map { it.size }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
+    val productsCount: StateFlow<Int> = Graph.productRepository.observeAll()
+        .map { it.size }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
     private val _pending = MutableStateFlow(0)
     val pending: StateFlow<Int> = _pending.asStateFlow()
 
@@ -119,12 +123,15 @@ fun OperationsHub(
     onOpenSync: () -> Unit,
     onOpenRoutePlan: () -> Unit,
     onOpenInventory: () -> Unit,
+    onOpenProducts: () -> Unit,
+    onOpenCheckIn: () -> Unit,
     onComingSoon: (String) -> Unit,
     vm: OperationsViewModel = viewModel()
 ) {
     val planned by vm.planned.collectAsStateSafe()
     val customers by vm.customers.collectAsStateSafe()
     val inventoryItems by vm.inventoryItems.collectAsStateSafe()
+    val productsCount by vm.productsCount.collectAsStateSafe()
     val pending by vm.pending.collectAsStateSafe()
 
     LaunchedEffect(Unit) { vm.refreshPending() }
@@ -133,7 +140,7 @@ fun OperationsHub(
         OpSection(
             "Field work", Accent.PRIMARY, listOf(
                 OpModule("Check-in / Checkout", "Start and close customer visits",
-                    Icons.Filled.PinDrop, true, onClick = onOpenCustomers),
+                    Icons.Filled.PinDrop, true, onClick = onOpenCheckIn),
                 OpModule("Route plan", "Customers assigned for today",
                     Icons.Filled.Route, true,
                     badge = planned.takeIf { it > 0 }?.toString(), onClick = onOpenRoutePlan),
@@ -144,11 +151,14 @@ fun OperationsHub(
         ),
         OpSection(
             "Sales & stock", Accent.SECONDARY, listOf(
-                OpModule("Sales / Orders", "Record sales during a visit",
-                    Icons.Filled.ShoppingCart, false) { onComingSoon("Sales") },
+                OpModule("Products", "View and manage catalog",
+                    Icons.Filled.Inventory, true,
+                    badge = productsCount.takeIf { it > 0 }?.toString(), onClick = onOpenProducts),
                 OpModule("Inventory", "Van stock on hand",
                     Icons.Filled.Inventory2, true,
                     badge = inventoryItems.takeIf { it > 0 }?.toString(), onClick = onOpenInventory),
+                OpModule("Sales / Orders", "Record sales during a visit",
+                    Icons.Filled.ShoppingCart, false) { onComingSoon("Sales") },
                 OpModule("Payment collection", "Collect and record payments",
                     Icons.Filled.Payments, false) { onComingSoon("Payments") }
             )

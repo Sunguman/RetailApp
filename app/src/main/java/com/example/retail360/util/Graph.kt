@@ -52,6 +52,7 @@ object Graph {
             "retail360.db"
         ).fallbackToDestructiveMigration().build()
 
+        cloudinary.provide(context)
         authRepository = AuthRepository(firebase)
         customerRepository = CustomerRepository(db.customerDao(), firebase, cloudinary)
         visitRepository = VisitRepository(db.visitDao(), db.availabilityDao(), db.saleDao(), firebase, cloudinary)

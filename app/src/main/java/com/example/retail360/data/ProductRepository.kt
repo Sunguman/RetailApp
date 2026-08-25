@@ -1,7 +1,9 @@
 package com.example.retail360.data
 
 import com.example.retail360.model.Product
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 
 class ProductRepository(
     private val dao: ProductDao,
@@ -11,9 +13,19 @@ class ProductRepository(
 
     val products: Flow<List<Product>> = dao.observeAll()
 
-    suspend fun refreshCatalog() {
-        // Mock: In a real app, this would fetch from Firebase/API
+    suspend fun refreshCatalog() = withContext(Dispatchers.IO) {
+        runCatching {
+            val products = firebase.fetchProducts()
+            if (products.isNotEmpty()) dao.upsertAll(products)
+        }
     }
 
-    suspend fun getByBarcode(barcode: String): Product? = dao.byBarcode(barcode)
+    suspend fun save(product: Product) = withContext(Dispatchers.IO) {
+        dao.upsert(product)
+        runCatching { firebase.pushProduct(product) }
+    }
+
+    suspend fun getByBarcode(barcode: String): Product? = withContext(Dispatchers.IO) {
+        dao.byBarcode(barcode)
+    }
 }

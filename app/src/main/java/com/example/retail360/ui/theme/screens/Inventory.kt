@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -29,6 +30,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import com.example.retail360.ui.theme.Components.brandedTopBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,12 +72,14 @@ class InventoryViewModel : ViewModel() {
 @Composable
 fun InventoryScreen(
     onBack: () -> Unit,
+    onAddProduct: () -> Unit,
     vm: InventoryViewModel = viewModel()
 ) {
     val items by vm.items.collectAsStateSafe()
     val total by vm.totalValue.collectAsStateSafe()
     val catalog by vm.catalog.collectAsStateSafe()
     var adding by remember { mutableStateOf(false) }
+    var editProduct by remember { mutableStateOf<Product?>(null) }
 
     Scaffold(
         topBar = {
@@ -85,7 +89,13 @@ fun InventoryScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                actions = {
+                    IconButton(onClick = onAddProduct) {
+                        Icon(Icons.Filled.LibraryAdd, contentDescription = "New product")
+                    }
+                },
+                colors = brandedTopBarColors()
             )
         },
         floatingActionButton = {
@@ -154,9 +164,6 @@ fun InventoryScreen(
     }
 }
 
-// Product being edited (null = pick from catalog first). Hoisted so the row click can set it.
-private var editProduct: Product? = null
-
 @Composable
 private fun SetStockDialog(
     catalog: List<Product>,
@@ -164,8 +171,8 @@ private fun SetStockDialog(
     onConfirm: (Product, Int) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var selected by remember { mutableStateOf(preselected) }
-    var qty by remember { mutableStateOf("") }
+    var selected by remember(preselected) { mutableStateOf(preselected) }
+    var qty by remember(preselected) { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,

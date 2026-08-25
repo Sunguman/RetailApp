@@ -69,6 +69,7 @@ import androidx.work.WorkManager
 import com.example.retail360.data.SyncWorker
 import com.example.retail360.navigation.LocalDrawerOpener
 import com.example.retail360.ui.theme.Components.AppFooter
+import com.example.retail360.ui.theme.Components.brandedTopBarColors
 import com.example.retail360.util.collectAsStateSafe
 import com.example.retail360.util.Graph
 import com.example.retail360.util.ksh
@@ -145,6 +146,8 @@ fun DashboardScreen(
     onOpenSync: () -> Unit,
     onOpenRoutePlan: () -> Unit,
     onOpenInventory: () -> Unit,
+    onOpenProducts: () -> Unit,
+    onOpenCheckIn: () -> Unit,
     onLoggedOut: () -> Unit,
     vm: DashboardViewModel = viewModel()
 ) {
@@ -271,12 +274,7 @@ fun DashboardScreen(
                         Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Log out")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
+                colors = brandedTopBarColors()
             )
         },
         snackbarHost = { SnackbarHost(snackbar) },
@@ -321,6 +319,8 @@ fun DashboardScreen(
                         onOpenSync = onOpenSync,
                         onOpenRoutePlan = onOpenRoutePlan,
                         onOpenInventory = onOpenInventory,
+                        onOpenProducts = onOpenProducts,
+                        onOpenCheckIn = onOpenCheckIn,
                         onComingSoon = { comingSoon(it) }
                     )
                 }

@@ -16,6 +16,13 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  */
 class CloudinaryService {
 
+    fun provide(context: android.content.Context) {
+        // MediaManager.init can only be called once.
+        runCatching { 
+            MediaManager.init(context) 
+        }
+    }
+
     suspend fun upload(localUri: Uri, folder: String): String? =
         suspendCancellableCoroutine { cont ->
             MediaManager.get().upload(localUri)

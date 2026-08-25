@@ -79,4 +79,24 @@ class FirebaseHelper {
     suspend fun fetchInventory(): List<InventoryItem> {
         return emptyList()
     }
+
+    suspend fun pushProduct(product: Product) {
+        try {
+            db.child("products").child(product.id).setValue(product).await()
+            Log.d("FirebaseHelper", "Pushed product: ${product.id}")
+        } catch (e: Exception) {
+            Log.e("FirebaseHelper", "Error pushing product: ${e.message}")
+            throw e
+        }
+    }
+
+    suspend fun fetchProducts(): List<Product> {
+        return try {
+            val snapshot = db.child("products").get().await()
+            snapshot.children.mapNotNull { it.getValue(Product::class.java) }
+        } catch (e: Exception) {
+            Log.e("FirebaseHelper", "Error fetching products: ${e.message}")
+            emptyList()
+        }
+    }
 }

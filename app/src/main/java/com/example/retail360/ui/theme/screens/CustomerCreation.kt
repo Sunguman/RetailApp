@@ -11,19 +11,23 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import com.example.retail360.ui.theme.Components.brandedTopBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,6 +56,9 @@ class CustomerCreationViewModel : ViewModel() {
     private val _customer = MutableStateFlow<Customer?>(null)
     val customer = _customer.asStateFlow()
 
+    var saving by mutableStateOf(false)
+        private set
+
     fun load(id: String) {
         viewModelScope.launch {
             _customer.value = repo.byId(id)
@@ -59,9 +66,12 @@ class CustomerCreationViewModel : ViewModel() {
     }
 
     fun save(customer: Customer, photoUri: Uri?, onDone: () -> Unit) {
+        if (saving) return
+        saving = true
         viewModelScope.launch {
             val repId = Graph.authRepository.currentUser()?.uid ?: ""
             repo.save(customer.copy(createdBy = repId), photoUri)
+            saving = false
             onDone()
         }
     }
@@ -118,7 +128,8 @@ fun CustomerCreationScreen(
                     IconButton(onClick = onDone) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = brandedTopBarColors()
             )
         }
     ) { padding ->
@@ -161,9 +172,19 @@ fun CustomerCreationScreen(
                     )
                     vm.save(customer, photoUri, onDone)
                 },
-                enabled = name.isNotBlank(),
+                enabled = name.isNotBlank() && !vm.saving,
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("Save customer") }
+            ) {
+                if (vm.saving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Save customer")
+                }
+            }
         }
     }
 }

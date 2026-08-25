@@ -42,10 +42,31 @@ interface ProductDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(products: List<Product>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(product: Product)
 }
+
+data class VisitHistoryRow(
+    val visitId: String,
+    val customerName: String,
+    val checkInTime: Long,
+    val checkOutTime: Long?,
+    val status: String
+)
 
 @Dao
 interface VisitDao {
+    @Query(
+        """
+        SELECT v.id AS visitId, c.name AS customerName, v.checkInTime AS checkInTime,
+               v.checkOutTime AS checkOutTime, v.status AS status
+        FROM visits v JOIN customers c ON c.id = v.customerId
+        ORDER BY v.checkInTime DESC LIMIT 100
+        """
+    )
+    fun observeHistory(): Flow<List<VisitHistoryRow>>
+
     @Query("SELECT * FROM visits WHERE id = :id")
     suspend fun byId(id: String): Visit?
 
@@ -102,6 +123,9 @@ data class PlannedStop(
     val customerId: String,
     val customerName: String,
     val customerType: String,
+    val customerLat: Double,
+    val customerLng: Double,
+    val photoUrl: String,
     val sequence: Int,
     val visited: Boolean
 )
@@ -111,7 +135,8 @@ interface RoutePlanDao {
     @Query(
         """
         SELECT rp.id AS entryId, c.id AS customerId, c.name AS customerName,
-               c.type AS customerType, rp.sequence AS sequence,
+               c.type AS customerType, c.latitude AS customerLat, c.longitude AS customerLng,
+               c.photoUrl AS photoUrl, rp.sequence AS sequence,
                EXISTS(SELECT 1 FROM visits v WHERE v.customerId = c.id
                       AND v.status = 'COMPLETED' AND v.checkInTime >= :startOfDay) AS visited
         FROM route_plan rp
