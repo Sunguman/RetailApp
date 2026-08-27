@@ -44,6 +44,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.retail360.navigation.LocalDrawerOpener
+import com.example.retail360.ui.components.Retail360Scaffold
+import com.example.retail360.ui.components.SectionHeader
+import com.example.retail360.ui.components.brandedTopBarColors
 import com.example.retail360.util.Graph
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -69,17 +72,9 @@ fun SettingsScreen(
     val snackbar = remember { SnackbarHostState() }
     var confirmClear by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Settings") },
-                navigationIcon = {
-                    IconButton(onClick = LocalDrawerOpener.current) {
-                        Icon(Icons.Filled.Menu, contentDescription = "Menu")
-                    }
-                }
-            )
-        },
+    Retail360Scaffold(
+        title = "Settings",
+        onMenu = LocalDrawerOpener.current,
         snackbarHost = { SnackbarHost(snackbar) }
     ) { padding ->
         Column(
@@ -134,16 +129,6 @@ fun SettingsScreen(
             }
         )
     }
-}
-
-@Composable
-private fun SectionHeader(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, top = 20.dp, bottom = 4.dp)
-    )
 }
 
 @Composable

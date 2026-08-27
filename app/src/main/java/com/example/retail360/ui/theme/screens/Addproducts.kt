@@ -48,7 +48,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.example.retail360.model.Product
+import com.example.retail360.data.model.Product
+import com.example.retail360.ui.components.Retail360Scaffold
+import com.example.retail360.ui.components.brandedTopBarColors
 import com.example.retail360.util.Graph
 import kotlinx.coroutines.launch
 
@@ -102,17 +104,9 @@ fun AddProductContent(
     val priceValue = price.toDoubleOrNull()
     val canSave = name.isNotBlank() && priceValue != null && !saving
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Add product") },
-                navigationIcon = {
-                    IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
+    Retail360Scaffold(
+        title = "Add product",
+        onBack = onDone
     ) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding)

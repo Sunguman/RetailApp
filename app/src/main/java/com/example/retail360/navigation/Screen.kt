@@ -18,6 +18,22 @@ sealed class Screen(val route: String) {
     data object ProductList : Screen("products")
     data object AddProduct : Screen("add-product")
 
+    data object Competitor : Screen("visit/{visitId}/competitor") {
+        fun path(visitId: String) = "visit/$visitId/competitor"
+    }
+    data object Payments : Screen("visit/{visitId}/payments") {
+        fun path(visitId: String) = "visit/$visitId/payments"
+    }
+    data object ProductUpdates : Screen("visit/{visitId}/product-updates") {
+        fun path(visitId: String) = "visit/$visitId/product-updates"
+    }
+    data object ShareOfShelfRoute : Screen("visit/{visitId}/sos") {
+        fun path(visitId: String) = "visit/$visitId/sos"
+    }
+    data object Photos : Screen("visit/{visitId}/photos") {
+        fun path(visitId: String) = "visit/$visitId/photos"
+    }
+
     data object CustomerEdit : Screen("customers/{customerId}/edit") {
         fun path(customerId: String) = "customers/$customerId/edit"
     }

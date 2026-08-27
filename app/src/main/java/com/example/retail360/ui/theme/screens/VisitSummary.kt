@@ -14,7 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import com.example.retail360.ui.theme.Components.brandedTopBarColors
+import com.example.retail360.ui.components.brandedTopBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,7 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.retail360.model.Visit
+import com.example.retail360.data.model.Visit
+import com.example.retail360.ui.components.Retail360Scaffold
 import com.example.retail360.util.collectAsStateSafe
 import com.example.retail360.util.ksh
 import com.example.retail360.util.Graph
@@ -62,8 +63,9 @@ fun VisitSummaryScreen(
     LaunchedEffect(visitId) { vm.load(visitId) }
     val s by vm.summary.collectAsStateSafe()
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text("Visit summary") }, colors = brandedTopBarColors()) }
+    Retail360Scaffold(
+        title = "Visit summary",
+        onBack = onDone
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
             Card(Modifier.fillMaxWidth()) {

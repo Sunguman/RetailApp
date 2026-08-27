@@ -1,14 +1,16 @@
-package com.example.retail360.data
+package com.example.retail360.data.repository
 
-import com.example.retail360.model.Customer
-import com.example.retail360.model.CloudinaryService
+import com.example.retail360.data.local.CustomerDao
+import com.example.retail360.data.model.Customer
+import com.example.retail360.data.remote.CloudinaryService
+import com.example.retail360.data.remote.FirebaseService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
 class CustomerRepository(
     private val dao: CustomerDao,
-    private val firebase: FirebaseHelper,
+    private val firebase: FirebaseService,
     private val cloudinary: CloudinaryService
 ) {
     fun observeAll(): Flow<List<Customer>> = dao.observeAll()

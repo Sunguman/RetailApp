@@ -1,11 +1,12 @@
-package com.example.retail360.data
+package com.example.retail360.data.repository
 
-import com.example.retail360.model.User
+import com.example.retail360.data.model.User
+import com.example.retail360.data.remote.FirebaseService
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.userProfileChangeRequest
 import kotlinx.coroutines.tasks.await
 
-class AuthRepository(private val firebase: FirebaseHelper) {
+class AuthRepository(private val firebase: FirebaseService) {
     private val auth = FirebaseAuth.getInstance()
 
     fun isLoggedIn(): Boolean = auth.currentUser != null
@@ -14,8 +15,7 @@ class AuthRepository(private val firebase: FirebaseHelper) {
         User(
             uid = it.uid,
             email = it.email ?: "",
-            name = it.displayName ?: "User",
-            phone = it.phoneNumber ?: ""
+            name = it.displayName ?: "User"
         )
     }
 

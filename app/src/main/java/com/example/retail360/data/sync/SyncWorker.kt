@@ -1,10 +1,9 @@
-package com.example.retail360.data
+package com.example.retail360.data.sync
 
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.retail360.util.Graph
-import com.example.retail360.model.*
 
 /**
  * Drains everything still marked synced=false and pushes it to Firebase, then
@@ -27,6 +26,11 @@ class SyncWorker(
             db.saleDao().unsynced().forEach { fb.pushSale(it); db.saleDao().upsert(it.copy(synced = true)) }
             db.routePlanDao().unsynced().forEach { fb.pushRoutePlan(it); db.routePlanDao().update(it.copy(synced = true)) }
             db.inventoryDao().unsynced().forEach { fb.pushInventory(it); db.inventoryDao().upsert(it.copy(synced = true)) }
+            db.competitorDao().unsynced().forEach { fb.pushCompetitor(it); db.competitorDao().upsert(it.copy(synced = true)) }
+            db.paymentDao().unsynced().forEach { fb.pushPayment(it); db.paymentDao().upsert(it.copy(synced = true)) }
+            db.productUpdateDao().unsynced().forEach { fb.pushProductUpdate(it); db.productUpdateDao().upsert(it.copy(synced = true)) }
+            db.shareOfShelfDao().unsynced().forEach { fb.pushShareOfShelf(it); db.shareOfShelfDao().upsert(it.copy(synced = true)) }
+            db.visitPhotoDao().unsynced().forEach { fb.pushVisitPhoto(it); db.visitPhotoDao().upsert(it.copy(synced = true)) }
 
             // Pull side: keep catalog + customers fresh.
             Graph.productRepository.refreshCatalog()

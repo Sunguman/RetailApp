@@ -39,7 +39,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import com.example.retail360.ui.theme.Components.brandedTopBarColors
+import com.example.retail360.ui.components.brandedTopBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -55,8 +55,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.retail360.model.Customer
-import com.example.retail360.model.Visit
+import com.example.retail360.data.model.Customer
+import com.example.retail360.data.model.Visit
+import com.example.retail360.ui.components.Retail360Scaffold
 import com.example.retail360.util.collectAsStateSafe
 import com.example.retail360.util.Graph
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -101,39 +102,24 @@ fun CustomerDetailsScreen(
     var tab by remember { mutableIntStateOf(0) }
     var menuOpen by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(customer?.name ?: "Outlet", maxLines = 1)
-                        Text("Outlet details", style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimary)
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { customer?.id?.let(vm::load) }) {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
-                    }
-                    Box {
-                        IconButton(onClick = { menuOpen = true }) {
-                            Icon(Icons.Filled.MoreVert, contentDescription = "More")
-                        }
-                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                            DropdownMenuItem(
-                                text = { Text("Edit") },
-                                onClick = { menuOpen = false; onEdit() }
-                            )
-                        }
-                    }
-                },
-                colors = brandedTopBarColors()
-            )
+    Retail360Scaffold(
+        title = customer?.name ?: "Outlet",
+        onBack = onBack,
+        actions = {
+            IconButton(onClick = { customer?.id?.let(vm::load) }) {
+                Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
+            }
+            Box {
+                IconButton(onClick = { menuOpen = true }) {
+                    Icon(Icons.Filled.MoreVert, contentDescription = "More")
+                }
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    DropdownMenuItem(
+                        text = { Text("Edit") },
+                        onClick = { menuOpen = false; onEdit() }
+                    )
+                }
+            }
         },
         floatingActionButton = {
             if (customer != null) {

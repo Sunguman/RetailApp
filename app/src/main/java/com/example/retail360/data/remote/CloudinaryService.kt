@@ -1,4 +1,4 @@
-package com.example.retail360.model
+package com.example.retail360.data.remote
 
 import android.net.Uri
 import com.cloudinary.android.MediaManager

@@ -1,7 +1,5 @@
 package com.example.retail360.ui.theme.screens
 
-
-
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,10 +9,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -43,7 +39,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class CustomerListViewModel : ViewModel() {
+class CheckInCheckoutViewModel : ViewModel() {
     private val repo = Graph.customerRepository
 
     val customers: StateFlow<List<Customer>> = repo.observeAll()
@@ -56,11 +52,10 @@ class CustomerListViewModel : ViewModel() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomerListScreen(
+fun CheckInCheckoutScreen(
     onBack: () -> Unit,
-    onCreate: () -> Unit,
-    onOpen: (String) -> Unit,
-    vm: CustomerListViewModel = viewModel()
+    onCheckIn: (String) -> Unit,
+    vm: CheckInCheckoutViewModel = viewModel()
 ) {
     val all by vm.customers.collectAsStateSafe()
     var query by remember { mutableStateOf("") }
@@ -70,30 +65,23 @@ fun CustomerListScreen(
     }
 
     Retail360Scaffold(
-        title = "Customers",
-        onBack = onBack,
-        floatingActionButton = {
-            FloatingActionButton(onClick = onCreate) {
-                Icon(Icons.Default.Add, contentDescription = "Add customer")
-            }
-        }
+        title = "Check-in / Checkout",
+        onBack = onBack
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             OutlinedTextField(
                 value = query, onValueChange = { query = it },
-                label = { Text("Search") }, singleLine = true,
+                label = { Text("Search outlets") }, singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(16.dp)
             )
             LazyColumn(Modifier.fillMaxSize()) {
                 items(filtered, key = { it.id }) { c ->
                     ListItem(
                         headlineContent = { Text(c.name) },
-                        supportingContent = { Text("${c.type} · ${c.phone}") },
-                        trailingContent = {
-                            if (!c.synced) Icon(Icons.Default.CloudOff, contentDescription = "Not synced")
-                        },
-                        modifier = Modifier.clickable { onOpen(c.id) }
+                        supportingContent = { Text(c.type) },
+                        modifier = Modifier.clickable { onCheckIn(c.id) }
                     )
+                    HorizontalDivider()
                 }
             }
         }

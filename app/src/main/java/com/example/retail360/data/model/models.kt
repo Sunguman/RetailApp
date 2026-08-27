@@ -1,4 +1,4 @@
-package com.example.retail360.model
+package com.example.retail360.data.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -14,7 +14,6 @@ data class User(
     val uid: String = "",
     val name: String = "",
     val email: String = "",
-    val phone: String = "",
     val role: String = "rep",
     val territory: String = ""
 )
@@ -113,5 +112,75 @@ data class InventoryItem(
     val value: Double get() = quantity * unitPrice
 }
 
+@Entity(tableName = "competitor_activity")
+data class CompetitorActivity(
+    @PrimaryKey val id: String = java.util.UUID.randomUUID().toString(),
+    val visitId: String = "",
+    val customerId: String = "",
+    val repId: String = "",
+    val competitor: String = "",
+    val activityType: String = "",            // Promotion / New product / Price change / POSM / Other
+    val description: String = "",
+    val photoUrl: String = "",
+    val createdAt: Long = System.currentTimeMillis(),
+    val synced: Boolean = false
+)
+
+@Entity(tableName = "payment_collection")
+data class PaymentCollection(
+    @PrimaryKey val id: String = java.util.UUID.randomUUID().toString(),
+    val visitId: String = "",
+    val customerId: String = "",
+    val repId: String = "",
+    val amount: Double = 0.0,
+    val method: String = "",                  // Cash / M-Pesa / Cheque / Bank
+    val reference: String = "",
+    val note: String = "",
+    val createdAt: Long = System.currentTimeMillis(),
+    val synced: Boolean = false
+)
+
+@Entity(tableName = "product_update")
+data class ProductUpdate(
+    @PrimaryKey val id: String = java.util.UUID.randomUUID().toString(),
+    val visitId: String = "",
+    val customerId: String = "",
+    val repId: String = "",
+    val productName: String = "",
+    val updateType: String = "",              // New listing / Delisted / Price change / Repackaged
+    val detail: String = "",
+    val photoUrl: String = "",
+    val createdAt: Long = System.currentTimeMillis(),
+    val synced: Boolean = false
+)
+
+@Entity(tableName = "share_of_shelf")
+data class ShareOfShelf(
+    @PrimaryKey val id: String = java.util.UUID.randomUUID().toString(),
+    val visitId: String = "",
+    val customerId: String = "",
+    val repId: String = "",
+    val category: String = "",
+    val ourFacings: Int = 0,
+    val totalFacings: Int = 0,
+    val photoUrl: String = "",
+    val createdAt: Long = System.currentTimeMillis(),
+    val synced: Boolean = false
+) {
+    val sosPercent: Int get() = if (totalFacings <= 0) 0 else (ourFacings * 100 / totalFacings)
+}
+
+@Entity(tableName = "visit_photo")
+data class VisitPhoto(
+    @PrimaryKey val id: String = java.util.UUID.randomUUID().toString(),
+    val visitId: String = "",
+    val customerId: String = "",
+    val repId: String = "",
+    val category: String = "",                // Storefront / Shelf / Display / POSM / Other
+    val caption: String = "",
+    val photoUrl: String = "",
+    val createdAt: Long = System.currentTimeMillis(),
+    val synced: Boolean = false
+)
 
 

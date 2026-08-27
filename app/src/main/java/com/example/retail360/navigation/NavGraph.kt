@@ -22,7 +22,7 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
             composable(Screen.Splash.route) {
                 SplashScreen(
                     onNext = {
-                        navController.navigate(Screen.Dashboard.route) {
+                        navController.navigate(Screen.Auth.route) {
                             popUpTo(Screen.Splash.route) { inclusive = true }
                         }
                     }
@@ -57,16 +57,12 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
                 CustomerListScreen(
                     onBack = { navController.popBackStack() },
                     onCreate = { navController.navigate(Screen.CustomerCreate.route) },
-                    onOpen = { id: String -> navController.navigate(Screen.CustomerDetails.path(id)) }
+                    onOpen = { id -> navController.navigate(Screen.CustomerDetails.path(id)) }
                 )
             }
 
             composable(Screen.CustomerCreate.route) {
-                CustomerCreationScreen(onDone = {
-                    navController.navigate(Screen.CustomerList.route) {
-                        popUpTo(Screen.CustomerList.route) { inclusive = true }
-                    }
-                })
+                CustomerCreationScreen(onDone = { navController.popBackStack() })
             }
 
             composable(Screen.CustomerEdit.route) { entry ->
@@ -92,7 +88,7 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
                 CheckInScreen(
                     customerId = id,
                     onBack = { navController.popBackStack() },
-                    onCheckedIn = { visitId: String ->
+                    onCheckedIn = { visitId ->
                         navController.navigate(Screen.ActiveVisit.path(visitId)) {
                             popUpTo(Screen.CustomerDetails.route)
                         }
@@ -106,9 +102,45 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
                     visitId = visitId,
                     onBack = { navController.popBackStack() },
                     onScan = { navController.navigate(Screen.ProductScan.path(visitId)) },
+                    onCompetitor = { navController.navigate(Screen.Competitor.path(visitId)) },
+                    onPayments = { navController.navigate(Screen.Payments.path(visitId)) },
+                    onProductUpdates = { navController.navigate(Screen.ProductUpdates.path(visitId)) },
+                    onShareOfShelf = { navController.navigate(Screen.ShareOfShelfRoute.path(visitId)) },
+                    onPhotos = { navController.navigate(Screen.Photos.path(visitId)) },
                     onAvailability = { navController.navigate(Screen.Availability.path(visitId)) },
                     onSales = { navController.navigate(Screen.Sales.path(visitId)) },
                     onCheckOut = { navController.navigate(Screen.CheckOut.path(visitId)) }
+                )
+            }
+
+            composable(Screen.Competitor.route) { e ->
+                CompetitorActivityScreen(
+                    visitId = e.arguments?.getString("visitId").orEmpty(),
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable(Screen.Payments.route) { e ->
+                PaymentCollectionScreen(
+                    visitId = e.arguments?.getString("visitId").orEmpty(),
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable(Screen.ProductUpdates.route) { e ->
+                ProductUpdateScreen(
+                    visitId = e.arguments?.getString("visitId").orEmpty(),
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable(Screen.ShareOfShelfRoute.route) { e ->
+                ShareOfShelfScreen(
+                    visitId = e.arguments?.getString("visitId").orEmpty(),
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable(Screen.Photos.route) { e ->
+                VisitPhotosScreen(
+                    visitId = e.arguments?.getString("visitId").orEmpty(),
+                    onBack = { navController.popBackStack() }
                 )
             }
 
@@ -159,7 +191,7 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
             composable(Screen.RoutePlan.route) {
                 RoutePlanScreen(
                     onBack = { navController.popBackStack() },
-                    onCheckIn = { customerId: String -> navController.navigate(Screen.CheckIn.path(customerId)) }
+                    onCheckIn = { customerId -> navController.navigate(Screen.CheckIn.path(customerId)) }
                 )
             }
 
@@ -174,18 +206,10 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
                 )
             }
 
-            composable(Screen.ProductList.route) {
-                ProductListScreen(
-                    onBack = { navController.popBackStack() },
-                    onAddProduct = { navController.navigate(Screen.AddProduct.route) }
-                )
-            }
-
             composable(Screen.CheckInCheckout.route) {
-                CustomerListScreen(
+                CheckInCheckoutScreen(
                     onBack = { navController.popBackStack() },
-                    onCreate = { navController.navigate(Screen.CustomerCreate.route) },
-                    onOpen = { customerId: String -> navController.navigate(Screen.CheckIn.path(customerId)) }
+                    onCheckIn = { customerId -> navController.navigate(Screen.CheckIn.path(customerId)) }
                 )
             }
         }

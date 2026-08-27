@@ -33,6 +33,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,8 +47,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -66,31 +70,66 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import com.example.retail360.data.SyncWorker
+import com.example.retail360.data.sync.SyncWorker
 import com.example.retail360.navigation.LocalDrawerOpener
-import com.example.retail360.ui.theme.Components.AppFooter
-import com.example.retail360.ui.theme.Components.brandedTopBarColors
+import com.example.retail360.ui.components.AppFooter
+import com.example.retail360.ui.components.Retail360Scaffold
+import com.example.retail360.ui.components.brandedTopBarColors
 import com.example.retail360.util.collectAsStateSafe
 import com.example.retail360.util.Graph
 import com.example.retail360.util.ksh
 import com.example.retail360.util.LocationProvider
 import com.example.retail360.util.NotificationCenter
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import kotlin.math.roundToInt
 
-class DashboardViewModel : ViewModel() {
-    private val startOfDay = Calendar.getInstance().apply {
-        set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0)
-    }.timeInMillis
+enum class DateFilter { TODAY, WEEK, MONTH, YEAR }
 
-    val visited: StateFlow<Int> = Graph.visitRepository
-        .countCompletedToday(startOfDay)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+class DashboardViewModel : ViewModel() {
+    private val _dateRange = MutableStateFlow<Pair<Long, Long>?>(null)
+    val dateRange = _dateRange
+
+    private fun getStartTimestamp(filter: DateFilter): Long {
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }
+        return when (filter) {
+            DateFilter.TODAY -> cal.timeInMillis
+            DateFilter.WEEK -> {
+                cal.set(Calendar.DAY_OF_WEEK, cal.firstDayOfWeek)
+                cal.timeInMillis
+            }
+            DateFilter.MONTH -> {
+                cal.set(Calendar.DAY_OF_MONTH, 1)
+                cal.timeInMillis
+            }
+            DateFilter.YEAR -> {
+                cal.set(Calendar.DAY_OF_YEAR, 1)
+                cal.timeInMillis
+            }
+        }
+    }
+
+    private val _currentFilter = MutableStateFlow(DateFilter.WEEK)
+    val currentFilter = _currentFilter
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val visited: StateFlow<Int> = combine(_currentFilter, _dateRange) { filter, range ->
+        if (range != null) range.first else getStartTimestamp(filter)
+    }.flatMapLatest { start ->
+        Graph.visitRepository.countCompletedToday(start)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     val totalCustomers: StateFlow<Int> = Graph.customerRepository.observeAll()
         .map { it.size }
@@ -99,6 +138,15 @@ class DashboardViewModel : ViewModel() {
     val repName: String = (Graph.authRepository.currentUser()?.email ?: "there")
         .substringBefore("@")
         .replaceFirstChar { it.uppercase() }
+
+    fun setFilter(filter: DateFilter) {
+        _currentFilter.value = filter
+        _dateRange.value = null
+    }
+
+    fun setCustomRange(start: Long, end: Long) {
+        _dateRange.value = start to end
+    }
 
     fun refresh(onDone: () -> Unit = {}) {
         viewModelScope.launch {
@@ -137,8 +185,6 @@ class DashboardViewModel : ViewModel() {
     fun logout() = Graph.authRepository.signOut()
 }
 
-private enum class DateFilter { WEEK, MONTH, YEAR }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
@@ -159,6 +205,8 @@ fun DashboardScreen(
     val totalCustomers by vm.totalCustomers.collectAsStateSafe()
     val plannedToday by vm.plannedToday.collectAsStateSafe()
     val stockValue by vm.stockValue.collectAsStateSafe()
+    val filter by vm.currentFilter.collectAsStateSafe()
+    val customRange by vm.dateRange.collectAsStateSafe()
 
     val version = remember {
         runCatching {
@@ -181,104 +229,91 @@ fun DashboardScreen(
     }
 
     var tab by remember { mutableIntStateOf(0) }
-    var filter by remember { mutableStateOf(DateFilter.WEEK) }
     var refreshing by remember { mutableStateOf(false) }
     var notifOpen by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+
     val notifications by NotificationCenter.items.collectAsStateSafe()
     val unread = notifications.count { !it.read }
 
     LaunchedEffect(Unit) { vm.checkPendingSync() }
 
-    fun comingSoon(name: String) {
-        scope.launch { snackbar.showSnackbar("$name — coming soon") }
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Retail360") },
-                navigationIcon = {
-                    IconButton(onClick = LocalDrawerOpener.current) {
-                        Icon(Icons.Filled.Menu, contentDescription = "Menu")
+    Retail360Scaffold(
+        title = "Retail360",
+        onMenu = LocalDrawerOpener.current,
+        actions = {
+            IconButton(onClick = {
+                if (!refreshing) {
+                    refreshing = true
+                    WorkManager.getInstance(context)
+                        .enqueue(OneTimeWorkRequestBuilder<SyncWorker>().build())
+                    vm.refresh {
+                        refreshing = false
+                        vm.checkPendingSync()
+                        NotificationCenter.post(
+                            "Data refreshed",
+                            "Latest customers and products loaded"
+                        )
+                        scope.launch { snackbar.showSnackbar("Refreshed") }
                     }
-                },
-                actions = {
+                }
+            }) {
+                if (refreshing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
+                }
+            }
+
+            Box {
+                BadgedBox(
+                    badge = { if (unread > 0) Badge { Text(unread.toString()) } }
+                ) {
                     IconButton(onClick = {
-                        if (!refreshing) {
-                            refreshing = true
-                            WorkManager.getInstance(context)
-                                .enqueue(OneTimeWorkRequestBuilder<SyncWorker>().build())
-                            vm.refresh {
-                                refreshing = false
-                                vm.checkPendingSync()
-                                NotificationCenter.post(
-                                    "Data refreshed",
-                                    "Latest customers and products loaded"
-                                )
-                                scope.launch { snackbar.showSnackbar("Refreshed") }
-                            }
-                        }
+                        notifOpen = true
+                        NotificationCenter.markAllRead()
                     }) {
-                        if (refreshing) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp
+                        Icon(Icons.Filled.Notifications, contentDescription = "Notifications")
+                    }
+                }
+                DropdownMenu(
+                    expanded = notifOpen,
+                    onDismissRequest = { notifOpen = false }
+                ) {
+                    if (notifications.isEmpty()) {
+                        DropdownMenuItem(
+                            text = { Text("No notifications") },
+                            onClick = { notifOpen = false }
+                        )
+                    } else {
+                        notifications.forEach { n ->
+                            DropdownMenuItem(
+                                text = {
+                                    Column {
+                                        Text(n.title, style = MaterialTheme.typography.bodyLarge)
+                                        Text(
+                                            n.body,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                },
+                                onClick = { notifOpen = false }
                             )
-                        } else {
-                            Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
                         }
                     }
+                }
+            }
 
-                    Box {
-                        BadgedBox(
-                            badge = { if (unread > 0) Badge { Text(unread.toString()) } }
-                        ) {
-                            IconButton(onClick = {
-                                notifOpen = true
-                                NotificationCenter.markAllRead()
-                            }) {
-                                Icon(Icons.Filled.Notifications, contentDescription = "Notifications")
-                            }
-                        }
-                        DropdownMenu(
-                            expanded = notifOpen,
-                            onDismissRequest = { notifOpen = false }
-                        ) {
-                            if (notifications.isEmpty()) {
-                                DropdownMenuItem(
-                                    text = { Text("No notifications") },
-                                    onClick = { notifOpen = false }
-                                )
-                            } else {
-                                notifications.forEach { n ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Column {
-                                                Text(n.title, style = MaterialTheme.typography.bodyLarge)
-                                                Text(
-                                                    n.body,
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            }
-                                        },
-                                        onClick = { notifOpen = false }
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    IconButton(onClick = { vm.logout(); onLoggedOut() }) {
-                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Log out")
-                    }
-                },
-                colors = brandedTopBarColors()
-            )
+            IconButton(onClick = { vm.logout(); onLoggedOut() }) {
+                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Log out")
+            }
         },
-        snackbarHost = { SnackbarHost(snackbar) },
-        bottomBar = { AppFooter(version, accuracyM) }
+        snackbarHost = { SnackbarHost(snackbar) }
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             Surface(color = MaterialTheme.colorScheme.primary) {
@@ -307,8 +342,9 @@ fun DashboardScreen(
                 when (tab) {
                     0 -> DashboardTab(
                         filter = filter,
-                        onFilter = { filter = it },
-                        onPickDate = { comingSoon("Date picker") },
+                        customRange = customRange,
+                        onFilter = { vm.setFilter(it) },
+                        onPickDate = { showDatePicker = true },
                         visited = visited,
                         planned = plannedToday,
                         totalCustomers = totalCustomers,
@@ -321,17 +357,31 @@ fun DashboardScreen(
                         onOpenInventory = onOpenInventory,
                         onOpenProducts = onOpenProducts,
                         onOpenCheckIn = onOpenCheckIn,
-                        onComingSoon = { comingSoon(it) }
+                        onActionRequiringVisit = { scope.launch { snackbar.showSnackbar("$it: Select an outlet to start a visit first") } }
                     )
                 }
             }
         }
     }
+
+    if (showDatePicker) {
+        DateRangePickerModal(
+            onDismiss = { showDatePicker = false },
+            onDateRangeSelected = { start, end ->
+                if (start != null && end != null) {
+                    vm.setCustomRange(start, end)
+                }
+                showDatePicker = false
+            }
+        )
+    }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DashboardTab(
     filter: DateFilter,
+    customRange: Pair<Long, Long>?,
     onFilter: (DateFilter) -> Unit,
     onPickDate: () -> Unit,
     visited: Int,
@@ -347,15 +397,31 @@ private fun DashboardTab(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            FilterPill("Week", filter == DateFilter.WEEK) { onFilter(DateFilter.WEEK) }
+            FilterPill("Today", filter == DateFilter.TODAY && customRange == null) { onFilter(DateFilter.TODAY) }
             Spacer(Modifier.width(8.dp))
-            FilterPill("Month", filter == DateFilter.MONTH) { onFilter(DateFilter.MONTH) }
+            FilterPill("Week", filter == DateFilter.WEEK && customRange == null) { onFilter(DateFilter.WEEK) }
             Spacer(Modifier.width(8.dp))
-            FilterPill("Year", filter == DateFilter.YEAR) { onFilter(DateFilter.YEAR) }
+            FilterPill("Month", filter == DateFilter.MONTH && customRange == null) { onFilter(DateFilter.MONTH) }
+            Spacer(Modifier.width(8.dp))
+            FilterPill("Year", filter == DateFilter.YEAR && customRange == null) { onFilter(DateFilter.YEAR) }
             Spacer(Modifier.weight(1f))
             IconButton(onClick = onPickDate) {
-                Icon(Icons.Filled.CalendarMonth, contentDescription = "Pick date")
+                Icon(
+                    Icons.Filled.CalendarMonth, 
+                    contentDescription = "Select date range",
+                    tint = if (customRange != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
             }
+        }
+
+        if (customRange != null) {
+            val df = SimpleDateFormat("MMM d", Locale.getDefault())
+            Text(
+                "Range: ${df.format(Date(customRange.first))} - ${df.format(Date(customRange.second))}",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
         }
 
         Card(Modifier.fillMaxWidth()) {
@@ -384,11 +450,6 @@ private fun DashboardTab(
                 Spacer(Modifier.height(12.dp))
                 MetricBar("Productivity", 0, totalCustomers)
             }
-        }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            CountCard("Pending trips", 0, Modifier.weight(1f))
-            CountCard("Pending deliveries", 0, Modifier.weight(1f))
         }
 
         Card(Modifier.fillMaxWidth()) {
@@ -432,19 +493,6 @@ private fun MetricBar(label: String, value: Int, target: Int) {
 }
 
 @Composable
-private fun CountCard(label: String, count: Int, modifier: Modifier) {
-    Card(modifier) {
-        Row(
-            Modifier.fillMaxWidth().padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-            Badge { Text(count.toString()) }
-        }
-    }
-}
-
-@Composable
 private fun FilterPill(text: String, selected: Boolean, onClick: () -> Unit) {
     Surface(
         shape = RoundedCornerShape(50),
@@ -474,3 +522,47 @@ private fun greeting(): String {
 private fun hasLocationPermission(context: Context): Boolean =
     ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
             PackageManager.PERMISSION_GRANTED
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DateRangePickerModal(
+    onDateRangeSelected: (Long?, Long?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val dateRangePickerState = rememberDateRangePickerState()
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onDateRangeSelected(
+                        dateRangePickerState.selectedStartDateMillis,
+                        dateRangePickerState.selectedEndDateMillis
+                    )
+                }
+            ) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    ) {
+        DateRangePicker(
+            state = dateRangePickerState,
+            title = {
+                Text(
+                    text = "Select date range"
+                )
+            },
+            showModeToggle = false,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(480.dp)
+                .padding(16.dp)
+        )
+    }
+}

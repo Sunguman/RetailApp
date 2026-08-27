@@ -1,13 +1,15 @@
-package com.example.retail360.data
+package com.example.retail360.data.repository
 
-import com.example.retail360.model.Product
+import com.example.retail360.data.local.ProductDao
+import com.example.retail360.data.model.Product
+import com.example.retail360.data.remote.FirebaseService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
 class ProductRepository(
     private val dao: ProductDao,
-    private val firebase: FirebaseHelper
+    private val firebase: FirebaseService
 ) {
     fun observeAll(): Flow<List<Product>> = dao.observeAll()
 

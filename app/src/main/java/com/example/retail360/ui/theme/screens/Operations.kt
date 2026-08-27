@@ -19,18 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Checklist
-import androidx.compose.material.icons.filled.CloudSync
-import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.Inventory
-import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.LocalShipping
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.PinDrop
-import androidx.compose.material.icons.filled.Route
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Update
-import androidx.compose.material.icons.filled.ViewWeek
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -51,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.retail360.ui.components.brandedTopBarColors
 import com.example.retail360.util.collectAsStateSafe
 import com.example.retail360.util.Graph
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -70,7 +60,7 @@ private data class OpModule(
     val label: String,
     val description: String,
     val icon: ImageVector,
-    val enabled: Boolean,
+    val enabled: Boolean = true,
     val badge: String? = null,
     val onClick: () -> Unit
 )
@@ -125,7 +115,7 @@ fun OperationsHub(
     onOpenInventory: () -> Unit,
     onOpenProducts: () -> Unit,
     onOpenCheckIn: () -> Unit,
-    onComingSoon: (String) -> Unit,
+    onActionRequiringVisit: (String) -> Unit,
     vm: OperationsViewModel = viewModel()
 ) {
     val planned by vm.planned.collectAsStateSafe()
@@ -157,31 +147,29 @@ fun OperationsHub(
                 OpModule("Inventory", "Van stock on hand",
                     Icons.Filled.Inventory2, true,
                     badge = inventoryItems.takeIf { it > 0 }?.toString(), onClick = onOpenInventory),
-                OpModule("Sales / Orders", "Record sales during a visit",
-                    Icons.Filled.ShoppingCart, false) { onComingSoon("Sales") },
-                OpModule("Payment collection", "Collect and record payments",
-                    Icons.Filled.Payments, false) { onComingSoon("Payments") }
+                OpModule("Sales / Orders", "View sales records",
+                    Icons.Filled.ShoppingCart, true) { onActionRequiringVisit("Sales") },
+                OpModule("Payments", "Collection history",
+                    Icons.Default.Payments, true) { onActionRequiringVisit("Payments") },
+                OpModule("Stocktaking", "Verify stock on shelf",
+                    Icons.Filled.QrCodeScanner, true) { onActionRequiringVisit("Stocktaking") }
             )
         ),
         OpSection(
-            "Insights", Accent.TERTIARY, listOf(
-                OpModule("On-shelf availability", "Audit whether products are stocked",
-                    Icons.Filled.Checklist, false) { onComingSoon("OSA") },
-                OpModule("Share of shelf", "Measure your shelf presence",
-                    Icons.Filled.ViewWeek, false) { onComingSoon("Share of shelf") },
-                OpModule("Product updates", "Log new or removed SKUs",
-                    Icons.Filled.Update, false) { onComingSoon("Product updates") },
+            "Merchandising", Accent.TERTIARY, listOf(
                 OpModule("Competitor activity", "Track competitor moves",
-                    Icons.AutoMirrored.Filled.CompareArrows, false) { onComingSoon("Competitor activity") }
+                    Icons.AutoMirrored.Filled.CompareArrows, true) { onActionRequiringVisit("Competitor Activity") },
+                OpModule("Share of shelf", "Measure shelf presence",
+                    Icons.Filled.ViewWeek, true) { onActionRequiringVisit("Share of Shelf") },
+                OpModule("Photos", "Capture visit gallery",
+                    Icons.Filled.PhotoCamera, true) { onActionRequiringVisit("Photos") }
             )
         ),
         OpSection(
             "System", Accent.NEUTRAL, listOf(
                 OpModule("Sync", "Upload offline work to the server",
                     Icons.Filled.CloudSync, true,
-                    badge = pending.takeIf { it > 0 }?.toString(), onClick = onOpenSync),
-                OpModule("Pending trips", "Planned deliveries",
-                    Icons.Filled.LocalShipping, false) { onComingSoon("Pending trips") }
+                    badge = pending.takeIf { it > 0 }?.toString(), onClick = onOpenSync)
             )
         )
     )

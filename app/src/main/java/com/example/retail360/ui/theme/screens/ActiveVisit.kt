@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,27 +15,30 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Assignment
-import androidx.compose.material.icons.automirrored.filled.FactCheck
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Checklist
-import androidx.compose.material.icons.automirrored.filled.CompareArrows
+import androidx.compose.material.icons.filled.CompareArrows
 import androidx.compose.material.icons.filled.EventBusy
+import androidx.compose.material.icons.filled.FactCheck
 import androidx.compose.material.icons.filled.Feedback
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PriceCheck
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.ViewWeek
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -60,14 +64,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.retail360.model.AvailabilityRecord
-import com.example.retail360.model.Customer
-import com.example.retail360.model.SaleItem
-import com.example.retail360.model.Visit
+import com.example.retail360.data.model.AvailabilityRecord
+import com.example.retail360.data.model.Customer
+import com.example.retail360.data.model.SaleItem
+import com.example.retail360.data.model.Visit
+import com.example.retail360.ui.components.Retail360Scaffold
+import com.example.retail360.ui.components.brandedTopBarColors
 import com.example.retail360.util.collectAsStateSafe
 import com.example.retail360.util.Graph
 import com.example.retail360.util.ksh
@@ -117,6 +124,11 @@ fun ActiveVisitScreen(
     visitId: String,
     onBack: () -> Unit,
     onScan: () -> Unit,
+    onCompetitor: () -> Unit,
+    onPayments: () -> Unit,
+    onProductUpdates: () -> Unit,
+    onShareOfShelf: () -> Unit,
+    onPhotos: () -> Unit,
     onAvailability: () -> Unit,
     onSales: () -> Unit,
     onCheckOut: () -> Unit,
@@ -143,57 +155,24 @@ fun ActiveVisitScreen(
         }
     }
 
-    fun comingSoon(name: String) { scope.launch { snackbar.showSnackbar("$name — coming soon") } }
-
     val activities = listOf(
-        Activity("POSM", Icons.Filled.Campaign, false) { comingSoon("POSM") },
-        Activity("Brand audit", Icons.AutoMirrored.Filled.FactCheck, false) { comingSoon("Brand audit") },
         Activity("Sell", Icons.Filled.ShoppingCart, true, onSales),
-        Activity("Orders", Icons.AutoMirrored.Filled.ReceiptLong, false) { comingSoon("Orders") },
-        Activity("Payments", Icons.Filled.Payments, false) { comingSoon("Payments") },
-        Activity("Price index", Icons.Filled.PriceCheck, false) { comingSoon("Price index") },
-        Activity("Deliver", Icons.Filled.LocalShipping, false) { comingSoon("Deliver") },
-        Activity("Feedback", Icons.Filled.Feedback, false) { comingSoon("Feedback") },
+        Activity("Payments", Icons.Filled.Payments, true, onPayments),
         Activity("On-shelf availability", Icons.Filled.Checklist, true, onAvailability),
         Activity("Stock taking / scan", Icons.Filled.QrCodeScanner, true, onScan),
-        Activity("Expiry", Icons.Filled.EventBusy, false) { comingSoon("Expiry") },
-        Activity("Competitor activity", Icons.AutoMirrored.Filled.CompareArrows, false) { comingSoon("Competitor activity") },
-        Activity("Share of shelf", Icons.Filled.ViewWeek, false) { comingSoon("Share of shelf") },
-        Activity("Survey", Icons.AutoMirrored.Filled.Assignment, false) { comingSoon("Survey") }
+        Activity("Competitor activity", Icons.Filled.CompareArrows, true, onCompetitor),
+        Activity("Share of shelf", Icons.Filled.ViewWeek, true, onShareOfShelf),
+        Activity("Product updates", Icons.Filled.Refresh, true, onProductUpdates),
+        Activity("Photos", Icons.Filled.PhotoCamera, true, onPhotos)
     )
 
-    if (visit == null) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-        return
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(customer?.name ?: "Active visit", maxLines = 1)
-                        Text("In-store visit", style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimary)
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
-        },
+    Retail360Scaffold(
+        title = customer?.name ?: "Active visit",
+        onBack = onBack,
         snackbarHost = { SnackbarHost(snackbar) }
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
+            // ---- Blue timer header ----
             Surface(color = MaterialTheme.colorScheme.primary) {
                 Column(
                     Modifier.fillMaxWidth().padding(16.dp),
@@ -219,6 +198,7 @@ fun ActiveVisitScreen(
                 }
             }
 
+            // ---- Tabs ----
             TabRow(selectedTabIndex = tab) {
                 Tab(tab == 0, { tab = 0 }, text = { Text("Activities") })
                 Tab(tab == 1, { tab = 1 }, text = { Text("Info") })
@@ -254,25 +234,50 @@ private fun ActivityTile(a: Activity) {
     Card(
         onClick = a.onClick,
         enabled = a.enabled,
-        modifier = Modifier.fillMaxWidth().height(84.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1.1f), // Slightly taller than square
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(20.dp)
     ) {
-        Row(Modifier.fillMaxSize().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Surface(
-                color = if (a.enabled) MaterialTheme.colorScheme.primaryContainer
+                color = if (a.enabled) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
                 else MaterialTheme.colorScheme.surfaceVariant,
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
-                modifier = Modifier.size(40.dp)
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.size(48.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(a.icon, contentDescription = null,
-                        tint = if (a.enabled) MaterialTheme.colorScheme.onPrimaryContainer
+                    Icon(
+                        a.icon, 
+                        contentDescription = null,
+                        tint = if (a.enabled) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(22.dp))
+                        modifier = Modifier.size(26.dp)
+                    )
                 }
             }
-            Text("  ${a.label}", style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium)
+            
+            Spacer(Modifier.height(12.dp))
+            
+            Text(
+                text = a.label,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
         }
     }
 }

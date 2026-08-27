@@ -1,17 +1,22 @@
-package com.example.retail360.data
+package com.example.retail360.data.local
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import com.example.retail360.model.AvailabilityRecord
-import com.example.retail360.model.InventoryItem
-import com.example.retail360.model.RoutePlanEntry
-import com.example.retail360.model.Customer
-import com.example.retail360.model.Product
-import com.example.retail360.model.SaleItem
-import com.example.retail360.model.Visit
+import com.example.retail360.data.model.AvailabilityRecord
+import com.example.retail360.data.model.CompetitorActivity
+import com.example.retail360.data.model.PaymentCollection
+import com.example.retail360.data.model.ProductUpdate
+import com.example.retail360.data.model.ShareOfShelf
+import com.example.retail360.data.model.VisitPhoto
+import com.example.retail360.data.model.InventoryItem
+import com.example.retail360.data.model.RoutePlanEntry
+import com.example.retail360.data.model.Customer
+import com.example.retail360.data.model.Product
+import com.example.retail360.data.model.SaleItem
+import com.example.retail360.data.model.Visit
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -179,4 +184,54 @@ interface InventoryDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(item: InventoryItem)
+}
+
+@Dao
+interface CompetitorDao {
+    @Query("SELECT * FROM competitor_activity WHERE visitId = :visitId ORDER BY createdAt DESC")
+    fun observeForVisit(visitId: String): Flow<List<CompetitorActivity>>
+    @Query("SELECT * FROM competitor_activity WHERE synced = 0")
+    suspend fun unsynced(): List<CompetitorActivity>
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(item: CompetitorActivity)
+}
+
+@Dao
+interface PaymentDao {
+    @Query("SELECT * FROM payment_collection WHERE visitId = :visitId ORDER BY createdAt DESC")
+    fun observeForVisit(visitId: String): Flow<List<PaymentCollection>>
+    @Query("SELECT * FROM payment_collection WHERE synced = 0")
+    suspend fun unsynced(): List<PaymentCollection>
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(item: PaymentCollection)
+}
+
+@Dao
+interface ProductUpdateDao {
+    @Query("SELECT * FROM product_update WHERE visitId = :visitId ORDER BY createdAt DESC")
+    fun observeForVisit(visitId: String): Flow<List<ProductUpdate>>
+    @Query("SELECT * FROM product_update WHERE synced = 0")
+    suspend fun unsynced(): List<ProductUpdate>
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(item: ProductUpdate)
+}
+
+@Dao
+interface ShareOfShelfDao {
+    @Query("SELECT * FROM share_of_shelf WHERE visitId = :visitId ORDER BY createdAt DESC")
+    fun observeForVisit(visitId: String): Flow<List<ShareOfShelf>>
+    @Query("SELECT * FROM share_of_shelf WHERE synced = 0")
+    suspend fun unsynced(): List<ShareOfShelf>
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(item: ShareOfShelf)
+}
+
+@Dao
+interface VisitPhotoDao {
+    @Query("SELECT * FROM visit_photo WHERE visitId = :visitId ORDER BY createdAt DESC")
+    fun observeForVisit(visitId: String): Flow<List<VisitPhoto>>
+    @Query("SELECT * FROM visit_photo WHERE synced = 0")
+    suspend fun unsynced(): List<VisitPhoto>
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(item: VisitPhoto)
 }

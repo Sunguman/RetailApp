@@ -7,16 +7,17 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import com.example.retail360.data.AppDatabase
-import com.example.retail360.model.CloudinaryService
-import com.example.retail360.data.FirebaseHelper
-import com.example.retail360.data.AuthRepository
-import com.example.retail360.data.CustomerRepository
-import com.example.retail360.data.InventoryRepository
-import com.example.retail360.data.ProductRepository
-import com.example.retail360.data.RoutePlanRepository
-import com.example.retail360.data.VisitRepository
-import com.example.retail360.data.SyncWorker
+import com.example.retail360.data.local.AppDatabase
+import com.example.retail360.data.remote.CloudinaryService
+import com.example.retail360.data.remote.FirebaseService
+import com.example.retail360.data.repository.AuthRepository
+import com.example.retail360.data.repository.CustomerRepository
+import com.example.retail360.data.repository.InventoryRepository
+import com.example.retail360.data.repository.MerchandisingRepository
+import com.example.retail360.data.repository.ProductRepository
+import com.example.retail360.data.repository.RoutePlanRepository
+import com.example.retail360.data.repository.VisitRepository
+import com.example.retail360.data.sync.SyncWorker
 import java.util.concurrent.TimeUnit
 
 /**
@@ -41,24 +42,29 @@ object Graph {
         private set
     lateinit var inventoryRepository: InventoryRepository
         private set
+    lateinit var merchandisingRepository: MerchandisingRepository
+        private set
 
-    val firebase = FirebaseHelper()
+    val firebase = FirebaseService()
     val cloudinary = CloudinaryService()
 
     fun provide(context: Context) {
         db = Room.databaseBuilder(
             context.applicationContext,
             AppDatabase::class.java,
-            "retail360.db"
+            "sales_automation.db"
         ).fallbackToDestructiveMigration().build()
 
-        cloudinary.provide(context)
         authRepository = AuthRepository(firebase)
         customerRepository = CustomerRepository(db.customerDao(), firebase, cloudinary)
         visitRepository = VisitRepository(db.visitDao(), db.availabilityDao(), db.saleDao(), firebase, cloudinary)
         productRepository = ProductRepository(db.productDao(), firebase)
         routePlanRepository = RoutePlanRepository(db.routePlanDao(), firebase)
         inventoryRepository = InventoryRepository(db.inventoryDao(), firebase)
+        merchandisingRepository = MerchandisingRepository(
+            db.competitorDao(), db.paymentDao(), db.productUpdateDao(), db.shareOfShelfDao(),
+            db.visitPhotoDao(), firebase, cloudinary
+        )
 
         schedulePeriodicSync(context)
     }
@@ -74,7 +80,7 @@ object Graph {
             .build()
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            "retail360_sync",
+            "sales_sync",
             ExistingPeriodicWorkPolicy.KEEP,
             request
         )

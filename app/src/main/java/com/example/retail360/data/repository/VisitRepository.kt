@@ -1,14 +1,14 @@
-package com.example.retail360.data
+package com.example.retail360.data.repository
 
 import android.net.Uri
-import com.example.retail360.data.AvailabilityDao
-import com.example.retail360.data.SaleDao
-import com.example.retail360.data.VisitDao
-import com.example.retail360.model.AvailabilityRecord
-import com.example.retail360.model.SaleItem
-import com.example.retail360.model.Visit
-import com.example.retail360.model.CloudinaryService
-import com.example.retail360.data.FirebaseHelper
+import com.example.retail360.data.local.AvailabilityDao
+import com.example.retail360.data.local.SaleDao
+import com.example.retail360.data.local.VisitDao
+import com.example.retail360.data.model.AvailabilityRecord
+import com.example.retail360.data.model.SaleItem
+import com.example.retail360.data.model.Visit
+import com.example.retail360.data.remote.CloudinaryService
+import com.example.retail360.data.remote.FirebaseService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -17,7 +17,7 @@ class VisitRepository(
     private val visitDao: VisitDao,
     private val availabilityDao: AvailabilityDao,
     private val saleDao: SaleDao,
-    private val firebase: FirebaseHelper,
+    private val firebase: FirebaseService,
     private val cloudinary: CloudinaryService
 ) {
     // ---- Visit lifecycle ----

@@ -1,6 +1,5 @@
 package com.example.retail360.ui.theme.screens
 
-
 import android.Manifest
 import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -23,7 +22,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import com.example.retail360.ui.theme.Components.brandedTopBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,10 +35,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.retail360.util.collectAsStateSafe
-import com.example.retail360.util.Graph
-import com.example.retail360.util.LatLng
-import com.example.retail360.util.LocationProvider
+import com.example.retail360.ui.components.Retail360Scaffold
+import com.example.retail360.ui.components.brandedTopBarColors
+import com.example.retail360.util.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -83,18 +80,9 @@ fun CheckOutScreen(
 
     LaunchedEffect(done) { if (done) onCheckedOut() }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Check out") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = brandedTopBarColors()
-            )
-        }
+    Retail360Scaffold(
+        title = "Check out",
+        onBack = onBack
     ) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).padding(16.dp),

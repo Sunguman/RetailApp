@@ -42,7 +42,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.runtime.collectAsState
+import com.example.retail360.util.collectAsStateSafe
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Devices
 import com.example.retail360.ui.theme.Retail360Theme
@@ -129,7 +129,7 @@ fun AuthScreen(
     onAuthed: () -> Unit,
     vm: AuthViewModel = viewModel()
 ) {
-    val state by vm.state.collectAsState()
+    val state by vm.state.collectAsStateSafe()
 
     LaunchedEffect(state.success) {
         if (state.success) onAuthed()

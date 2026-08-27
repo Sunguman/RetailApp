@@ -29,7 +29,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import com.example.retail360.ui.theme.Components.brandedTopBarColors
+import com.example.retail360.ui.components.Retail360Scaffold
+import com.example.retail360.ui.components.brandedTopBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -42,8 +43,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.retail360.data.PlannedStop
-import com.example.retail360.model.Customer
+import com.example.retail360.data.local.PlannedStop
+import com.example.retail360.data.model.Customer
 import com.example.retail360.util.collectAsStateSafe
 import com.example.retail360.util.Graph
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -112,18 +113,9 @@ fun RoutePlanScreen(
     val assigned by vm.assignedIds.collectAsStateSafe()
     var assigning by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Route plan") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = brandedTopBarColors()
-            )
-        },
+    Retail360Scaffold(
+        title = "Route plan",
+        onBack = onBack,
         floatingActionButton = {
             FloatingActionButton(onClick = { assigning = true }) {
                 Icon(Icons.Filled.PersonAdd, contentDescription = "Assign customers")

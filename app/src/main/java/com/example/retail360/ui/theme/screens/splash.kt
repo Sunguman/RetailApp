@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.runtime.collectAsState
 import com.example.retail360.util.Graph
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Devices
@@ -35,6 +34,7 @@ import com.example.retail360.ui.theme.Retail360Theme
 import com.example.retail360.ui.theme.White
 import com.example.retail360.ui.theme.Black
 import com.example.retail360.R
+import com.example.retail360.util.collectAsStateSafe
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -66,7 +66,7 @@ fun SplashScreen(
     onNext: () -> Unit,
     vm: SplashViewModel = viewModel()
 ) {
-    val target by vm.target.collectAsState()
+    val target by vm.target.collectAsStateSafe()
 
     LaunchedEffect(Unit) { vm.decide() }
     LaunchedEffect(target) {

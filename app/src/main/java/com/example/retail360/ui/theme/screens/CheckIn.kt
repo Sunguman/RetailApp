@@ -1,6 +1,5 @@
 package com.example.retail360.ui.theme.screens
 
-
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -26,7 +25,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import com.example.retail360.ui.theme.Components.brandedTopBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
@@ -39,9 +37,9 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.retail360.util.collectAsStateSafe
-import com.example.retail360.util.Graph
-import com.example.retail360.util.LocationProvider
+import com.example.retail360.ui.components.Retail360Scaffold
+import com.example.retail360.ui.components.brandedTopBarColors
+import com.example.retail360.util.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -140,18 +138,9 @@ fun CheckInScreen(
         state.startedVisitId?.let { onCheckedIn(it) }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Check in") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = brandedTopBarColors()
-            )
-        }
+    Retail360Scaffold(
+        title = "Check in",
+        onBack = onBack
     ) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).padding(24.dp),

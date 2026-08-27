@@ -7,6 +7,10 @@ import kotlinx.coroutines.flow.StateFlow
 import java.text.NumberFormat
 import java.util.Locale
 
+private val kshFormatter = NumberFormat.getCurrencyInstance(Locale("en", "KE")).apply {
+    currency = java.util.Currency.getInstance("KES")
+}
+
 /**
  * A safe way to collect StateFlow in Compose, ensuring we always have the
  * initial value and correct lifecycle awareness.
@@ -18,10 +22,16 @@ fun <T> StateFlow<T>.collectAsStateSafe(): State<T> {
 
 /**
  * Formats a double as Kenyan Shillings (KSh).
+ * Uses a cached formatter to avoid heavy object allocation in loops.
  */
 fun Double.ksh(): String {
-    val format = NumberFormat.getCurrencyInstance(Locale("en", "KE"))
-    return format.format(this).replace("KES", "KSh")
+    return try {
+        synchronized(kshFormatter) {
+            kshFormatter.format(this).replace("KES", "KSh")
+        }
+    } catch (e: Exception) {
+        "KSh %,.2f".format(this)
+    }
 }
 
 fun Int.ksh(): String = this.toDouble().ksh()

@@ -14,7 +14,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material3.AlertDialog
@@ -25,12 +24,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import com.example.retail360.ui.theme.Components.brandedTopBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,12 +40,17 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.retail360.model.InventoryItem
-import com.example.retail360.model.Product
+import com.example.retail360.data.model.InventoryItem
+import com.example.retail360.data.model.Product
+import com.example.retail360.ui.components.Retail360Scaffold
 import com.example.retail360.util.collectAsStateSafe
 import com.example.retail360.util.Graph
+import com.example.retail360.util.ksh
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -62,6 +63,11 @@ class InventoryViewModel : ViewModel() {
 
     val catalog: StateFlow<List<Product>> = Graph.productRepository.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val catalogMap: StateFlow<Map<String, Product>> = Graph.productRepository.observeAll()
+        .map { list -> list.associateBy { it.id } }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     fun setQuantity(product: Product, quantity: Int) {
         viewModelScope.launch { Graph.inventoryRepository.setQuantity(product, quantity) }
@@ -78,25 +84,17 @@ fun InventoryScreen(
     val items by vm.items.collectAsStateSafe()
     val total by vm.totalValue.collectAsStateSafe()
     val catalog by vm.catalog.collectAsStateSafe()
+    val catalogMap by vm.catalogMap.collectAsStateSafe()
     var adding by remember { mutableStateOf(false) }
     var editProduct by remember { mutableStateOf<Product?>(null) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Inventory") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onAddProduct) {
-                        Icon(Icons.Filled.LibraryAdd, contentDescription = "New product")
-                    }
-                },
-                colors = brandedTopBarColors()
-            )
+    Retail360Scaffold(
+        title = "Inventory",
+        onBack = onBack,
+        actions = {
+            IconButton(onClick = onAddProduct) {
+                Icon(Icons.Filled.LibraryAdd, contentDescription = "New product")
+            }
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { adding = true }) {
@@ -107,9 +105,9 @@ fun InventoryScreen(
         Column(Modifier.fillMaxSize().padding(padding)) {
             Surface(color = MaterialTheme.colorScheme.primaryContainer) {
                 Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                    Text("Current stock value", style = MaterialTheme.typography.titleSmall,
+                    Text("Current stock value", style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer)
-                    Text(ksh(total), style = MaterialTheme.typography.headlineMedium,
+                    Text(total.ksh(), style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer)
                 }
@@ -132,7 +130,7 @@ fun InventoryScreen(
                         Row(
                             Modifier.fillMaxWidth()
                                 .clickable {
-                                    catalog.find { it.id == item.productId }?.let {
+                                    catalogMap[item.productId]?.let {
                                         adding = true; editProduct = it
                                     }
                                 }
@@ -141,11 +139,11 @@ fun InventoryScreen(
                         ) {
                             Column(Modifier.weight(1f)) {
                                 Text(item.productName, style = MaterialTheme.typography.bodyLarge)
-                                Text("${item.quantity} @ ${ksh(item.unitPrice)}",
+                                Text("${item.quantity} @ ${item.unitPrice.ksh()}",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            Text(ksh(item.value), style = MaterialTheme.typography.titleMedium)
+                            Text(item.value.ksh(), style = MaterialTheme.typography.titleMedium)
                         }
                         HorizontalDivider()
                     }
@@ -214,5 +212,3 @@ private fun SetStockDialog(
         }
     )
 }
-
-private fun ksh(v: Double): String = "KES %,.2f".format(v)
