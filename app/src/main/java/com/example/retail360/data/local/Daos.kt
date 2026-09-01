@@ -16,6 +16,7 @@ import com.example.retail360.data.model.RoutePlanEntry
 import com.example.retail360.data.model.Customer
 import com.example.retail360.data.model.Product
 import com.example.retail360.data.model.SaleItem
+import com.example.retail360.data.model.StockMovement
 import com.example.retail360.data.model.Visit
 import kotlinx.coroutines.flow.Flow
 
@@ -107,6 +108,9 @@ interface AvailabilityDao {
 interface SaleDao {
     @Query("SELECT * FROM sale_items WHERE visitId = :visitId")
     fun observeForVisit(visitId: String): Flow<List<SaleItem>>
+
+    @Query("SELECT * FROM sale_items")
+    fun observeAll(): Flow<List<SaleItem>>
 
     @Query("SELECT * FROM sale_items WHERE synced = 0")
     suspend fun unsynced(): List<SaleItem>
@@ -234,4 +238,16 @@ interface VisitPhotoDao {
     suspend fun unsynced(): List<VisitPhoto>
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(item: VisitPhoto)
+}
+
+@Dao
+interface StockMovementDao {
+    @Query("SELECT * FROM stock_movement WHERE visitId = :visitId ORDER BY createdAt DESC")
+    fun observeForVisit(visitId: String): Flow<List<StockMovement>>
+    @Query("SELECT * FROM stock_movement ORDER BY createdAt DESC")
+    fun observeAll(): Flow<List<StockMovement>>
+    @Query("SELECT * FROM stock_movement WHERE synced = 0")
+    suspend fun unsynced(): List<StockMovement>
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(item: StockMovement)
 }

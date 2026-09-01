@@ -115,6 +115,7 @@ fun OperationsHub(
     onOpenInventory: () -> Unit,
     onOpenProducts: () -> Unit,
     onOpenCheckIn: () -> Unit,
+    onOpenSales: () -> Unit,
     onActionRequiringVisit: (String) -> Unit,
     vm: OperationsViewModel = viewModel()
 ) {
@@ -148,7 +149,7 @@ fun OperationsHub(
                     Icons.Filled.Inventory2, true,
                     badge = inventoryItems.takeIf { it > 0 }?.toString(), onClick = onOpenInventory),
                 OpModule("Sales / Orders", "View sales records",
-                    Icons.Filled.ShoppingCart, true) { onActionRequiringVisit("Sales") },
+                    Icons.Filled.ShoppingCart, true, onClick = onOpenSales),
                 OpModule("Payments", "Collection history",
                     Icons.Default.Payments, true) { onActionRequiringVisit("Payments") },
                 OpModule("Stocktaking", "Verify stock on shelf",

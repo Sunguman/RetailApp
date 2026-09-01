@@ -14,6 +14,7 @@ import com.example.retail360.data.repository.AuthRepository
 import com.example.retail360.data.repository.CustomerRepository
 import com.example.retail360.data.repository.InventoryRepository
 import com.example.retail360.data.repository.MerchandisingRepository
+import com.example.retail360.data.repository.StockControlRepository
 import com.example.retail360.data.repository.ProductRepository
 import com.example.retail360.data.repository.RoutePlanRepository
 import com.example.retail360.data.repository.VisitRepository
@@ -44,6 +45,8 @@ object Graph {
         private set
     lateinit var merchandisingRepository: MerchandisingRepository
         private set
+    lateinit var stockControlRepository: StockControlRepository
+        private set
 
     val firebase = FirebaseService()
     val cloudinary = CloudinaryService()
@@ -65,6 +68,7 @@ object Graph {
             db.competitorDao(), db.paymentDao(), db.productUpdateDao(), db.shareOfShelfDao(),
             db.visitPhotoDao(), firebase, cloudinary
         )
+        stockControlRepository = StockControlRepository(db.stockMovementDao(), db.saleDao(), firebase)
 
         schedulePeriodicSync(context)
     }

@@ -16,10 +16,14 @@ sealed class Screen(val route: String) {
     data object Inventory : Screen("inventory")
     data object CheckInCheckout : Screen("checkin-list")
     data object ProductList : Screen("products")
+    data object GlobalSales : Screen("global-sales")
     data object AddProduct : Screen("add-product")
 
     data object Competitor : Screen("visit/{visitId}/competitor") {
         fun path(visitId: String) = "visit/$visitId/competitor"
+    }
+    data object AddCompetitor : Screen("visit/{visitId}/competitor/add") {
+        fun path(visitId: String) = "visit/$visitId/competitor/add"
     }
     data object Payments : Screen("visit/{visitId}/payments") {
         fun path(visitId: String) = "visit/$visitId/payments"
@@ -32,6 +36,12 @@ sealed class Screen(val route: String) {
     }
     data object Photos : Screen("visit/{visitId}/photos") {
         fun path(visitId: String) = "visit/$visitId/photos"
+    }
+    data object AddStock : Screen("add-stock/{visitId}") {
+        fun path(visitId: String) = "add-stock/$visitId"
+    }
+    data object Sell : Screen("visit/{visitId}/sell") {
+        fun path(visitId: String) = "visit/$visitId/sell"
     }
 
     data object CustomerEdit : Screen("customers/{customerId}/edit") {
@@ -70,5 +80,3 @@ sealed class Screen(val route: String) {
         fun path(visitId: String) = "visit/$visitId/summary"
     }
 }
-
-

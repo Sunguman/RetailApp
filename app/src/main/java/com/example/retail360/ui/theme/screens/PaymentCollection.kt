@@ -128,6 +128,14 @@ fun PaymentCollectionScreen(
                     enabled = amountValue != null && amountValue > 0,
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Record payment") }
+                
+                Button(
+                    onClick = onBack,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    )
+                ) { Text("Finish & Go Back") }
             }
             HorizontalDivider()
             LazyColumn(Modifier.fillMaxSize()) {

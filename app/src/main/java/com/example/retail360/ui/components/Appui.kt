@@ -36,10 +36,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import com.example.retail360.util.LocationProvider
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -84,6 +87,13 @@ fun Retail360Scaffold(
     }
     
     var accuracyM by remember { mutableStateOf<Float?>(null) }
+    
+    LaunchedEffect(Unit) {
+        if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION) == 
+            android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            accuracyM = LocationProvider(context).current()?.accuracyM
+        }
+    }
     
     Scaffold(
         topBar = {

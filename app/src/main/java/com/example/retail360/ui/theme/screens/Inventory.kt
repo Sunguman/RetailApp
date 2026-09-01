@@ -1,77 +1,45 @@
 package com.example.retail360.ui.theme.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.LibraryAdd
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.retail360.data.model.InventoryItem
-import com.example.retail360.data.model.Product
+import com.example.retail360.data.repository.ProductStock
 import com.example.retail360.ui.components.Retail360Scaffold
 import com.example.retail360.util.collectAsStateSafe
 import com.example.retail360.util.Graph
-import com.example.retail360.util.ksh
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 class InventoryViewModel : ViewModel() {
-    val items: StateFlow<List<InventoryItem>> = Graph.inventoryRepository.observeAll()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    val totalValue: StateFlow<Double> = Graph.inventoryRepository.totalValue()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
-
-    val catalog: StateFlow<List<Product>> = Graph.productRepository.observeAll()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    val catalogMap: StateFlow<Map<String, Product>> = Graph.productRepository.observeAll()
-        .map { list -> list.associateBy { it.id } }
-        .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
-
-    fun setQuantity(product: Product, quantity: Int) {
-        viewModelScope.launch { Graph.inventoryRepository.setQuantity(product, quantity) }
-    }
+    val stock = Graph.stockControlRepository.observeVanStock()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList<ProductStock>())
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,14 +47,14 @@ class InventoryViewModel : ViewModel() {
 fun InventoryScreen(
     onBack: () -> Unit,
     onAddProduct: () -> Unit,
+    onAddStock: () -> Unit,
     vm: InventoryViewModel = viewModel()
 ) {
-    val items by vm.items.collectAsStateSafe()
-    val total by vm.totalValue.collectAsStateSafe()
-    val catalog by vm.catalog.collectAsStateSafe()
-    val catalogMap by vm.catalogMap.collectAsStateSafe()
-    var adding by remember { mutableStateOf(false) }
-    var editProduct by remember { mutableStateOf<Product?>(null) }
+    val stock by vm.stock.collectAsStateSafe()
+    val available = stock.sumOf { it.available.coerceAtLeast(0) }
+    val pending = stock.sumOf { it.pendingReq }
+    val sold = stock.sumOf { it.sold }
+    val returned = stock.sumOf { it.returned }
 
     Retail360Scaffold(
         title = "Inventory",
@@ -97,118 +65,73 @@ fun InventoryScreen(
             }
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { adding = true }) {
+            androidx.compose.material3.FloatingActionButton(onClick = onAddStock) {
                 Icon(Icons.Filled.Add, contentDescription = "Add stock")
             }
         }
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
+            // Van stock summary
             Surface(color = MaterialTheme.colorScheme.primaryContainer) {
                 Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                    Text("Current stock value", style = MaterialTheme.typography.bodyMedium,
+                    Text("VAN STOCK", style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer)
-                    Text(total.ksh(), style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Row(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                        Cell("Available", available.toString(), Modifier.weight(1f))
+                        Cell("Pending", pending.toString(), Modifier.weight(1f))
+                        Cell("Sold", sold.toString(), Modifier.weight(1f))
+                        Cell("Returned", returned.toString(), Modifier.weight(1f))
+                    }
                 }
             }
+            Button(onClick = onAddStock, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                Text("Add Stock  (Requisition · Uplift · Return)")
+            }
+            HorizontalDivider()
 
-            if (items.isEmpty()) {
-                Column(
-                    Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text("No stock recorded.", style = MaterialTheme.typography.bodyLarge)
-                    Text("Tap + to load stock from the catalog.",
+            if (stock.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No stock yet. Tap Add Stock to requisition or uplift.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
-                LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 8.dp)) {
-                    items(items, key = { it.id }) { item ->
-                        Row(
-                            Modifier.fillMaxWidth()
-                                .clickable {
-                                    catalogMap[item.productId]?.let {
-                                        adding = true; editProduct = it
-                                    }
-                                }
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(Modifier.weight(1f)) {
-                                Text(item.productName, style = MaterialTheme.typography.bodyLarge)
-                                Text("${item.quantity} @ ${item.unitPrice.ksh()}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            Text(item.value.ksh(), style = MaterialTheme.typography.titleMedium)
-                        }
-                        HorizontalDivider()
-                    }
+                LazyColumn(Modifier.fillMaxSize()) {
+                    items(stock, key = { it.productId }) { p -> StockRow(p) }
                 }
             }
         }
-    }
-
-    if (adding) {
-        SetStockDialog(
-            catalog = catalog,
-            preselected = editProduct,
-            onConfirm = { product, qty -> vm.setQuantity(product, qty); adding = false; editProduct = null },
-            onDismiss = { adding = false; editProduct = null }
-        )
     }
 }
 
 @Composable
-private fun SetStockDialog(
-    catalog: List<Product>,
-    preselected: Product?,
-    onConfirm: (Product, Int) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var selected by remember(preselected) { mutableStateOf(preselected) }
-    var qty by remember(preselected) { mutableStateOf("") }
+private fun Cell(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer)
+        Text(label, style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer)
+    }
+}
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                enabled = selected != null && qty.toIntOrNull() != null,
-                onClick = { selected?.let { onConfirm(it, qty.toInt()) } }
-            ) { Text("Save") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-        title = { Text(if (selected == null) "Select product" else "Set quantity") },
-        text = {
-            if (selected == null) {
-                if (catalog.isEmpty()) {
-                    Text("No products in the catalog yet.")
-                } else {
-                    LazyColumn {
-                        items(catalog, key = { it.id }) { p ->
-                            Text(
-                                p.name,
-                                Modifier.fillMaxWidth().clickable { selected = p }
-                                    .padding(vertical = 12.dp)
-                            )
-                        }
-                    }
-                }
-            } else {
-                Column {
-                    Text(selected!!.name, style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = qty,
-                        onValueChange = { qty = it.filter(Char::isDigit) },
-                        label = { Text("Quantity on hand") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                    )
-                }
-            }
+@Composable
+private fun StockRow(p: ProductStock) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(p.productName, style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+            Text("${p.available.coerceAtLeast(0)} ${p.unit}",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
         }
-    )
+        val bits = buildList {
+            if (p.pendingReq > 0) add("Pending ${p.pendingReq}")
+            if (p.sold > 0) add("Sold ${p.sold}")
+            if (p.returned > 0) add("Returned ${p.returned}")
+        }
+        if (bits.isNotEmpty())
+            Text(bits.joinToString(" · "), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        HorizontalDivider(Modifier.padding(top = 12.dp))
+    }
 }

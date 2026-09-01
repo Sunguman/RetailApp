@@ -57,6 +57,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -74,10 +75,9 @@ import com.example.retail360.data.model.Customer
 import com.example.retail360.data.model.SaleItem
 import com.example.retail360.data.model.Visit
 import com.example.retail360.ui.components.Retail360Scaffold
-import com.example.retail360.ui.components.brandedTopBarColors
-import com.example.retail360.util.collectAsStateSafe
+import com.example.retail360.ui.components.SectionHeader
 import com.example.retail360.util.Graph
-import com.example.retail360.util.ksh
+import com.example.retail360.util.collectAsStateSafe
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -95,6 +95,8 @@ class ActiveVisitViewModel : ViewModel() {
     val sales = _sales.asStateFlow()
     private val _availability = MutableStateFlow<List<AvailabilityRecord>>(emptyList())
     val availability = _availability.asStateFlow()
+    private val _availableTotal = MutableStateFlow(0)
+    val availableTotal = _availableTotal.asStateFlow()
 
     fun load(visitId: String) {
         viewModelScope.launch {
@@ -107,6 +109,10 @@ class ActiveVisitViewModel : ViewModel() {
         }
         viewModelScope.launch {
             Graph.visitRepository.observeAvailability(visitId).collect { _availability.value = it }
+        }
+        viewModelScope.launch {
+            Graph.stockControlRepository.observeVanStock()
+                .collect { list -> _availableTotal.value = list.sumOf { it.available.coerceAtLeast(0) } }
         }
     }
 }
@@ -131,6 +137,8 @@ fun ActiveVisitScreen(
     onPhotos: () -> Unit,
     onAvailability: () -> Unit,
     onSales: () -> Unit,
+    onAddStock: () -> Unit,
+    onSell: () -> Unit,
     onCheckOut: () -> Unit,
     vm: ActiveVisitViewModel = viewModel()
 ) {
@@ -139,6 +147,9 @@ fun ActiveVisitScreen(
     val customer by vm.customer.collectAsStateSafe()
     val sales by vm.sales.collectAsStateSafe()
     val availability by vm.availability.collectAsStateSafe()
+    val availableTotal by vm.availableTotal.collectAsStateSafe()
+    var showStockRequired by remember { mutableStateOf(false) }
+    fun trySell() { if (availableTotal > 0) onSell() else showStockRequired = true }
 
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
@@ -156,7 +167,7 @@ fun ActiveVisitScreen(
     }
 
     val activities = listOf(
-        Activity("Sell", Icons.Filled.ShoppingCart, true, onSales),
+        Activity("Sell", Icons.Filled.ShoppingCart, true) { trySell() },
         Activity("Payments", Icons.Filled.Payments, true, onPayments),
         Activity("On-shelf availability", Icons.Filled.Checklist, true, onAvailability),
         Activity("Stock taking / scan", Icons.Filled.QrCodeScanner, true, onScan),
@@ -213,17 +224,38 @@ fun ActiveVisitScreen(
                 }
             }
         }
+
+        if (showStockRequired) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showStockRequired = false },
+                title = { Text("Stock Required") },
+                text = { Text("No stock has been added to this visit. Please add stock before recording sales.") },
+                confirmButton = {
+                    androidx.compose.material3.TextButton(onClick = {
+                        showStockRequired = false; onAddStock()
+                    }) { Text("Add Stock") }
+                },
+                dismissButton = {
+                    androidx.compose.material3.TextButton(onClick = { showStockRequired = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
     }
 }
+
+
+
 
 @Composable
 private fun ActivitiesGrid(activities: List<Activity>) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        contentPadding = PaddingValues(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(activities, key = { it.label }) { a -> ActivityTile(a) }
     }
@@ -234,50 +266,32 @@ private fun ActivityTile(a: Activity) {
     Card(
         onClick = a.onClick,
         enabled = a.enabled,
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1.1f), // Slightly taller than square
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(20.dp)
+        modifier = Modifier.fillMaxWidth().aspectRatio(1.1f),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+            Modifier.fillMaxSize().padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Surface(
-                color = if (a.enabled) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                color = if (a.enabled) MaterialTheme.colorScheme.primaryContainer
                 else MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.size(48.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        a.icon, 
-                        contentDescription = null,
+                    Icon(a.icon, contentDescription = null,
                         tint = if (a.enabled) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(26.dp)
-                    )
+                        modifier = Modifier.size(26.dp))
                 }
             }
-            
             Spacer(Modifier.height(12.dp))
-            
-            Text(
-                text = a.label,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-            )
+            Text(a.label, style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
         }
     }
 }
@@ -307,7 +321,7 @@ private fun InsightsTab(sales: List<SaleItem>, availability: List<AvailabilityRe
     val total = sales.sumOf { it.lineTotal }
     val units = sales.sumOf { it.quantity }
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        StatBig("Sales so far", total.ksh())
+        StatBig("Sales so far", ksh(total))
         StatBig("Units sold", units.toString())
         StatBig("Lines recorded", sales.size.toString())
         StatBig("Availability checks", availability.size.toString())
@@ -334,3 +348,5 @@ private fun formatElapsed(ms: Long): String {
     val s = totalSec % 60
     return "%02dhrs %02dmin %02dsec".format(h, m, s)
 }
+
+private fun ksh(v: Double): String = "KES %,.2f".format(v)

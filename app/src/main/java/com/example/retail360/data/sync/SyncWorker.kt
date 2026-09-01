@@ -31,6 +31,7 @@ class SyncWorker(
             db.productUpdateDao().unsynced().forEach { fb.pushProductUpdate(it); db.productUpdateDao().upsert(it.copy(synced = true)) }
             db.shareOfShelfDao().unsynced().forEach { fb.pushShareOfShelf(it); db.shareOfShelfDao().upsert(it.copy(synced = true)) }
             db.visitPhotoDao().unsynced().forEach { fb.pushVisitPhoto(it); db.visitPhotoDao().upsert(it.copy(synced = true)) }
+            db.stockMovementDao().unsynced().forEach { fb.pushStockMovement(it); db.stockMovementDao().upsert(it.copy(synced = true)) }
 
             // Pull side: keep catalog + customers fresh.
             Graph.productRepository.refreshCatalog()

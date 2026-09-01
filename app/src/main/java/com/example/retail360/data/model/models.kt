@@ -64,13 +64,19 @@ data class Visit(
 
 @Entity(tableName = "availability")
 data class AvailabilityRecord(
-    @PrimaryKey val id: String = UUID.randomUUID().toString(),
+    // Deterministic id ("$visitId-$productId") so re-assessing a SKU updates in place.
+    @PrimaryKey val id: String = "",
     val visitId: String = "",
+    val customerId: String = "",
+    val outletName: String = "",
+    val repId: String = "",
+    val category: String = "",
     val productId: String = "",
     val productName: String = "",
-    val inStock: Boolean = false,
-    val facings: Int = 0,
-    val shelfPhotoUrl: String = "",
+    val status: String = "",              // AVAILABLE / INSUFFICIENT / NOT_AVAILABLE
+    val lat: Double = 0.0,
+    val lng: Double = 0.0,
+    val createdAt: Long = System.currentTimeMillis(),
     val synced: Boolean = false
 )
 
@@ -117,14 +123,32 @@ data class CompetitorActivity(
     @PrimaryKey val id: String = java.util.UUID.randomUUID().toString(),
     val visitId: String = "",
     val customerId: String = "",
+    val outletName: String = "",
     val repId: String = "",
     val competitor: String = "",
-    val activityType: String = "",            // Promotion / New product / Price change / POSM / Other
-    val description: String = "",
+    val brand: String = "",
+    val productSku: String = "",
+    val activityType: String = "",
+    val otherActivity: String = "",           // when activityType == Other
+    val beforePrice: Double = 0.0,
+    val afterPrice: Double = 0.0,
+    val stockStatus: String = "",             // IN_STOCK / OUT_OF_STOCK / UNKNOWN
+    val estimatedQty: Int = 0,
+    val startDate: Long = 0L,
+    val endDate: Long = 0L,                    // 0 = none
+    val ongoing: Boolean = false,
+    val displayType: String = "",
+    val otherDisplay: String = "",            // when displayType == Other
+    val notes: String = "",
     val photoUrl: String = "",
+    val lat: Double = 0.0,
+    val lng: Double = 0.0,
     val createdAt: Long = System.currentTimeMillis(),
     val synced: Boolean = false
-)
+) {
+    val discountAmount: Double get() = (beforePrice - afterPrice).coerceAtLeast(0.0)
+    val discountDepth: Double get() = if (beforePrice > 0) (beforePrice - afterPrice) / beforePrice * 100 else 0.0
+}
 
 @Entity(tableName = "payment_collection")
 data class PaymentCollection(
@@ -182,5 +206,26 @@ data class VisitPhoto(
     val createdAt: Long = System.currentTimeMillis(),
     val synced: Boolean = false
 )
+
+@Entity(tableName = "stock_movement")
+data class StockMovement(
+    @PrimaryKey val id: String = java.util.UUID.randomUUID().toString(),
+    val visitId: String = "",
+    val customerId: String = "",
+    val repId: String = "",
+    val stockPoint: String = "",
+    val category: String = "",
+    val productId: String = "",
+    val productName: String = "",
+    val unit: String = "",
+    val movementType: String = "",            // REQUISITION / UPLIFT / RETURN
+    val status: String = "",                  // PENDING / APPROVED / REJECTED / CONFIRMED
+    val quantity: Int = 0,
+    val unitPrice: Double = 0.0,
+    val createdAt: Long = System.currentTimeMillis(),
+    val synced: Boolean = false
+) {
+    val total: Double get() = quantity * unitPrice
+}
 
 

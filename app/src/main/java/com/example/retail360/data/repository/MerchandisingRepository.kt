@@ -13,9 +13,29 @@ import com.example.retail360.data.model.ShareOfShelf
 import com.example.retail360.data.model.VisitPhoto
 import com.example.retail360.data.remote.CloudinaryService
 import com.example.retail360.data.remote.FirebaseService
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.withContext
+
+/** Cascading competitor master data. TODO: source from backend (Firebase 'competitors' node). */
+data class CompetitorInfo(val name: String, val brands: List<BrandInfo>)
+data class BrandInfo(val name: String, val products: List<String>)
+
+val DEFAULT_COMPETITORS = listOf(
+    CompetitorInfo("Midea Electronics Ltd", listOf(
+        BrandInfo("Midea Air Conditioning", listOf("12K AC", "18K AC", "24K AC")),
+        BrandInfo("Midea Refrigeration", listOf("Single Door Fridge", "Double Door Fridge"))
+    )),
+    CompetitorInfo("Samsung", listOf(
+        BrandInfo("Samsung Home Appliances", listOf("Front Load Washer", "Top Load Washer", "Microwave")),
+        BrandInfo("Samsung Display", listOf("43\" TV", "55\" TV"))
+    )),
+    CompetitorInfo("Hisense", listOf(
+        BrandInfo("Hisense Cooling", listOf("1.5HP AC", "2HP AC")),
+        BrandInfo("Hisense TV", listOf("40\" TV", "50\" TV"))
+    )),
+    CompetitorInfo("Ramtons", listOf(
+        BrandInfo("Ramtons Kitchen", listOf("Blender", "Kettle", "Cooker"))
+    ))
+)
 
 /**
  * One repository for the in-visit merchandising activities (competitor, payments,
@@ -35,7 +55,7 @@ class MerchandisingRepository(
     fun observeCompetitor(visitId: String): Flow<List<CompetitorActivity>> =
         competitorDao.observeForVisit(visitId)
 
-    suspend fun saveCompetitor(item: CompetitorActivity, photoUri: Uri?) = withContext(Dispatchers.IO) {
+    suspend fun saveCompetitor(item: CompetitorActivity, photoUri: Uri?) {
         val url = photoUri?.let { runCatching { cloudinary.upload(it, "competitor") }.getOrNull() }.orEmpty()
         val row = item.copy(photoUrl = url, synced = false)
         competitorDao.upsert(row)
@@ -46,7 +66,7 @@ class MerchandisingRepository(
     fun observePayments(visitId: String): Flow<List<PaymentCollection>> =
         paymentDao.observeForVisit(visitId)
 
-    suspend fun savePayment(item: PaymentCollection) = withContext(Dispatchers.IO) {
+    suspend fun savePayment(item: PaymentCollection) {
         val row = item.copy(synced = false)
         paymentDao.upsert(row)
         runCatching { firebase.pushPayment(row); paymentDao.upsert(row.copy(synced = true)) }
@@ -56,7 +76,7 @@ class MerchandisingRepository(
     fun observeProductUpdates(visitId: String): Flow<List<ProductUpdate>> =
         productUpdateDao.observeForVisit(visitId)
 
-    suspend fun saveProductUpdate(item: ProductUpdate, photoUri: Uri?) = withContext(Dispatchers.IO) {
+    suspend fun saveProductUpdate(item: ProductUpdate, photoUri: Uri?) {
         val url = photoUri?.let { runCatching { cloudinary.upload(it, "product_updates") }.getOrNull() }.orEmpty()
         val row = item.copy(photoUrl = url, synced = false)
         productUpdateDao.upsert(row)
@@ -67,7 +87,7 @@ class MerchandisingRepository(
     fun observeShareOfShelf(visitId: String): Flow<List<ShareOfShelf>> =
         shareOfShelfDao.observeForVisit(visitId)
 
-    suspend fun saveShareOfShelf(item: ShareOfShelf, photoUri: Uri?) = withContext(Dispatchers.IO) {
+    suspend fun saveShareOfShelf(item: ShareOfShelf, photoUri: Uri?) {
         val url = photoUri?.let { runCatching { cloudinary.upload(it, "share_of_shelf") }.getOrNull() }.orEmpty()
         val row = item.copy(photoUrl = url, synced = false)
         shareOfShelfDao.upsert(row)
@@ -78,7 +98,7 @@ class MerchandisingRepository(
     fun observePhotos(visitId: String): Flow<List<VisitPhoto>> =
         visitPhotoDao.observeForVisit(visitId)
 
-    suspend fun savePhoto(item: VisitPhoto, photoUri: Uri?) = withContext(Dispatchers.IO) {
+    suspend fun savePhoto(item: VisitPhoto, photoUri: Uri?) {
         val url = photoUri?.let { runCatching { cloudinary.upload(it, "visit_photos") }.getOrNull() }.orEmpty()
         val row = item.copy(photoUrl = url, synced = false)
         visitPhotoDao.upsert(row)

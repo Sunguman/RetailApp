@@ -143,6 +143,14 @@ fun VisitPhotosScreen(
                     Icon(Icons.Filled.PhotoCamera, contentDescription = null)
                     Text("  Take photo")
                 }
+                
+                Button(
+                    onClick = onBack,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    )
+                ) { Text("Finish & Go Back") }
             }
 
             if (items.isEmpty()) {

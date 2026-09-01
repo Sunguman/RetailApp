@@ -194,6 +194,7 @@ fun DashboardScreen(
     onOpenInventory: () -> Unit,
     onOpenProducts: () -> Unit,
     onOpenCheckIn: () -> Unit,
+    onOpenSales: () -> Unit,
     onLoggedOut: () -> Unit,
     vm: DashboardViewModel = viewModel()
 ) {
@@ -357,6 +358,7 @@ fun DashboardScreen(
                         onOpenInventory = onOpenInventory,
                         onOpenProducts = onOpenProducts,
                         onOpenCheckIn = onOpenCheckIn,
+                        onOpenSales = onOpenSales,
                         onActionRequiringVisit = { scope.launch { snackbar.showSnackbar("$it: Select an outlet to start a visit first") } }
                     )
                 }

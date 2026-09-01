@@ -121,6 +121,14 @@ fun ProductUpdateScreen(
                     enabled = product.isNotBlank(),
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Record") }
+                
+                Button(
+                    onClick = onBack,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    )
+                ) { Text("Finish & Go Back") }
             }
             HorizontalDivider()
             LazyColumn(Modifier.fillMaxSize()) {

@@ -45,6 +45,7 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
                     onOpenCheckIn = { navController.navigate(Screen.CheckInCheckout.route) },
                     onOpenInventory = { navController.navigate(Screen.Inventory.route) },
                     onOpenProducts = { navController.navigate(Screen.ProductList.route) },
+                    onOpenSales = { navController.navigate(Screen.GlobalSales.route) },
                     onLoggedOut = {
                         navController.navigate(Screen.Auth.route) {
                             popUpTo(0) { inclusive = true }
@@ -109,14 +110,24 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
                     onPhotos = { navController.navigate(Screen.Photos.path(visitId)) },
                     onAvailability = { navController.navigate(Screen.Availability.path(visitId)) },
                     onSales = { navController.navigate(Screen.Sales.path(visitId)) },
+                    onAddStock = { navController.navigate(Screen.AddStock.path(visitId)) },
+                    onSell = { navController.navigate(Screen.Sell.path(visitId)) },
                     onCheckOut = { navController.navigate(Screen.CheckOut.path(visitId)) }
                 )
             }
 
             composable(Screen.Competitor.route) { e ->
+                val vId = e.arguments?.getString("visitId").orEmpty()
                 CompetitorActivityScreen(
+                    visitId = vId,
+                    onBack = { navController.popBackStack() },
+                    onAdd = { navController.navigate(Screen.AddCompetitor.path(vId)) }
+                )
+            }
+            composable(Screen.AddCompetitor.route) { e ->
+                AddCompetitorActivityScreen(
                     visitId = e.arguments?.getString("visitId").orEmpty(),
-                    onBack = { navController.popBackStack() }
+                    onDone = { navController.popBackStack() }
                 )
             }
             composable(Screen.Payments.route) { e ->
@@ -139,6 +150,18 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
             }
             composable(Screen.Photos.route) { e ->
                 VisitPhotosScreen(
+                    visitId = e.arguments?.getString("visitId").orEmpty(),
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable(Screen.AddStock.route) { e ->
+                AddStockScreen(
+                    visitId = e.arguments?.getString("visitId").orEmpty(),
+                    onDone = { navController.popBackStack() }
+                )
+            }
+            composable(Screen.Sell.route) { e ->
+                SellScreen(
                     visitId = e.arguments?.getString("visitId").orEmpty(),
                     onBack = { navController.popBackStack() }
                 )
@@ -199,10 +222,22 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
                 AddProductScreen(onDone = { navController.popBackStack() })
             }
 
+            composable(Screen.ProductList.route) {
+                ProductListScreen(
+                    onBack = { navController.popBackStack() },
+                    onAddProduct = { navController.navigate(Screen.AddProduct.route) }
+                )
+            }
+
+            composable(Screen.GlobalSales.route) {
+                GlobalSalesScreen(onBack = { navController.popBackStack() })
+            }
+
             composable(Screen.Inventory.route) {
                 InventoryScreen(
                     onBack = { navController.popBackStack() },
-                    onAddProduct = { navController.navigate(Screen.AddProduct.route) }
+                    onAddProduct = { navController.navigate(Screen.AddProduct.route) },
+                    onAddStock = { navController.navigate(Screen.AddStock.path("global")) }
                 )
             }
 
@@ -215,6 +250,3 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
         }
     }
 }
-
-
-

@@ -4,6 +4,7 @@ import android.net.Uri
 import com.example.retail360.data.local.AvailabilityDao
 import com.example.retail360.data.local.SaleDao
 import com.example.retail360.data.local.VisitDao
+import com.example.retail360.data.local.VisitHistoryRow
 import com.example.retail360.data.model.AvailabilityRecord
 import com.example.retail360.data.model.SaleItem
 import com.example.retail360.data.model.Visit
@@ -44,6 +45,8 @@ class VisitRepository(
     fun observeForCustomer(customerId: String): Flow<List<Visit>> =
         visitDao.observeForCustomer(customerId)
 
+    fun observeHistory(): Flow<List<VisitHistoryRow>> = visitDao.observeHistory()
+
     fun countCompletedToday(startOfDay: Long): Flow<Int> =
         visitDao.countCompletedSince(startOfDay)
 
@@ -63,19 +66,15 @@ class VisitRepository(
     fun observeAvailability(visitId: String): Flow<List<AvailabilityRecord>> =
         availabilityDao.observeForVisit(visitId)
 
-    suspend fun saveAvailability(record: AvailabilityRecord, localPhotoUri: Uri?) = withContext(Dispatchers.IO) {
-        var toSave = record.copy(synced = false)
+    suspend fun saveAvailability(record: AvailabilityRecord) = withContext(Dispatchers.IO) {
+        val toSave = record.copy(synced = false)
         availabilityDao.upsert(toSave)
-        if (localPhotoUri != null) {
-            cloudinary.upload(localPhotoUri, "availability")?.let {
-                toSave = toSave.copy(shelfPhotoUrl = it)
-            }
-        }
-        runCatching { firebase.pushAvailability(toSave); toSave = toSave.copy(synced = true) }
-        availabilityDao.upsert(toSave)
+        runCatching { firebase.pushAvailability(toSave); availabilityDao.upsert(toSave.copy(synced = true)) }
     }
 
     // ---- Sales ----
+    fun observeAllSales(): Flow<List<SaleItem>> = saleDao.observeAll()
+
     fun observeSales(visitId: String): Flow<List<SaleItem>> = saleDao.observeForVisit(visitId)
 
     suspend fun addSale(item: SaleItem) = withContext(Dispatchers.IO) {
@@ -92,4 +91,3 @@ class VisitRepository(
         saleDao.totalForVisit(visitId)
     }
 }
-

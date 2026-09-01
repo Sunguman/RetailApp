@@ -11,6 +11,7 @@ import com.example.retail360.data.model.InventoryItem
 import com.example.retail360.data.model.Product
 import com.example.retail360.data.model.RoutePlanEntry
 import com.example.retail360.data.model.SaleItem
+import com.example.retail360.data.model.StockMovement
 import com.example.retail360.data.model.Visit
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -68,6 +69,9 @@ class FirebaseService {
 
     suspend fun pushVisitPhoto(p: VisitPhoto) =
         db.child("visit_photo").child(p.id).setValue(p.copy(synced = true)).await()
+
+    suspend fun pushStockMovement(m: StockMovement) =
+        db.child("stock_movement").child(m.id).setValue(m.copy(synced = true)).await()
 
     // ---- Pulls (catalog is authored server-side) ----
     suspend fun pushProduct(p: Product) =
